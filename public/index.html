@@ -450,76 +450,63 @@
                 }
             },
 
+            // دالة تحميل البيانات المحدثة والمحمية من التعليق
             async loadDB() {
                 try {
-                    // محاولة تحميل البيانات من السيرفر السحابي الموحد أولاً
-                    const cloudData = await loadDataFromServer();
-                    if (cloudData) {
-                        this.db = cloudData;
-                    } else {
-                        // إذا فشل السيرفر لأي سبب، يتم الاعتماد على الذاكرة المحلية كخيار احتياطي آمن
-                        const data = localStorage.getItem(DB_KEY);
-                        this.db = data ? JSON.parse(data) : JSON.parse(JSON.stringify(initialData));
+                    // نضع حداً أقصى لانتظار السيرفر (ثانيتين فقط) حتى لا تعلّق الشاشة
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+                    const response = await fetch(`${API_URL}/api/get-data`, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
+                    if (response.ok) {
+                        const cloudData = await response.json();
+                        if (cloudData && cloudData.users && cloudData.users.length > 0) {
+                            this.db = cloudData;
+                            localStorage.setItem(DB_KEY, JSON.stringify(cloudData));
+                            console.log("تم تحميل البيانات بنجاح من السيرفر السحابي");
+                            return;
+                        }
                     }
-                    
-                    if(!this.db.finance) this.db.finance = JSON.parse(JSON.stringify(initialData.finance));
-                    if(!this.db.finance.transactions) this.db.finance.transactions = [];
-                    if(!this.db.students) this.db.students = [];
-                    if(!this.db.circles) this.db.circles = [];
-                    if(!this.db.dailyLogs) this.db.dailyLogs = [];
-                    if(!this.db.tests) this.db.tests = []; 
-                    if(!this.db.settings) this.db.settings = initialData.settings;
-                    if(!this.db.activityLogs) this.db.activityLogs = [];
-                    if(!this.db.testRequests) this.db.testRequests = [];
-                    
-                    this.db.students.forEach(s => { 
-                        if(s.juzCount === undefined) s.juzCount = 0; 
-                        if(s.points === undefined) s.points = 0;
-                        s.juzCount = parseInt(s.juzCount) || 0;
-                    });
-                } catch(e) {
+                } catch (e) {
+                    console.log("السيرفر السحابي غير مستجيب، يتم الانتقال للبيانات الاحتياطية فوراً لمنع التعليق");
+                }
+
+                // الحل الاحتياطي السريع: التحميل من الذاكرة المحلية للمتصفح
+                const local = localStorage.getItem(DB_KEY);
+                if (local) {
+                    try {
+                        this.db = JSON.parse(local);
+                        // تأكيد للتأكد من أن البيانات المحلية تحتوي على المستخدمين
+                        if (!this.db.users || this.db.users.length === 0) {
+                            this.db = JSON.parse(JSON.stringify(initialData));
+                        }
+                    } catch(e) {
+                        this.db = JSON.parse(JSON.stringify(initialData));
+                    }
+                } else {
+                    // إذا كان النظام يفتح لأول مرة تماماً
                     this.db = JSON.parse(JSON.stringify(initialData));
                 }
+                
+                // حفظ نسخة نظيفة محلياً لضمان وجود حساب admin دائماً
+                localStorage.setItem(DB_KEY, JSON.stringify(this.db));
             },
 
-           // دالة تحميل البيانات عند فتح الموقع: تقرأ من السيرفر السحابي أولاً، وإذا فشلت تقرأ من الجهاز
-async function loadDB() {
-    try {
-        const response = await fetch('/api/get-data');
-        if (response.ok) {
-            const cloudData = await response.json();
-            if (cloudData) {
-                App.db = cloudData;
-                localStorage.setItem(DB_KEY, JSON.stringify(cloudData));
-                return;
-            }
-        }
-    } catch (e) {
-        console.log("السيرفر غير مستجيب، الانتقال للذاكرة المحلية", e);
-    }
-    
-    // حل احتياطي في حال انقطاع الإنترنت
-    const local = localStorage.getItem(DB_KEY);
-    App.db = local ? JSON.stringify(local) : JSON.parse(JSON.stringify(initialData));
-}
-
-// دالة حفظ البيانات الموحدة: تحفظ في الجهاز وترسل للسيرفر السحابي فوراً لكي يراها باقي المعلمين!
-async function saveDB() {
-    // 1. حفظ محلي سريع منعاً للبطء
-    localStorage.setItem(DB_KEY, JSON.stringify(App.db));
-    
-    // 2. إرسال فوري للسيرفر السحابي لتحديث باقي الهواتف والأجهزة
-    try {
-        await fetch('/api/save-data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(App.db)
-        });
-    } catch (e) {
-        console.error("فشل المزامنة السحابية اللحظية", e);
-    }
-}
-
+            // دالة حفظ البيانات الموحدة
+            async saveDB() {
+                localStorage.setItem(DB_KEY, JSON.stringify(this.db));
+                try {
+                    await fetch(`${API_URL}/api/save-data`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.db)
+                    });
+                } catch (e) {
+                    console.error("فشل المزامنة السحابية اللحظية، تم الحفظ محلياً فقط"، e);
+                }
+            },
             logActivity(action, details) {
                 if(!this.db.activityLogs) this.db.activityLogs = [];
                 this.db.activityLogs.push({
