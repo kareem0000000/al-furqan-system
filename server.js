@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// الاتصال بقاعدة البيانات السحابية (رابط افتراضي للمحلي وسيتغير عند الرفع لـ Render)
+// الاتصال بقاعدة البيانات السحابية
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/al_furqan_db";
 mongoose.connect(MONGO_URI)
     .then(() => console.log("تم الاتصال بنجاح بقاعدة البيانات"))
@@ -27,7 +27,6 @@ app.get('/api/get-data', async (req, res) => {
     try {
         let record = await CenterData.findOne({ key: 'al_furqan_ultimate_db' });
         if (!record) {
-            // إذا كانت قاعدة البيانات فارغة تماماً عند أول تشغيل
             return res.json(null);
         }
         res.json(record.data);
@@ -48,6 +47,20 @@ app.post('/api/save-data', async (req, res) => {
         res.json({ success: true, message: "تم الحفظ والربط بنجاح" });
     } catch (error) {
         res.status(500).json({ error: "حدث خطأ أثناء حفظ البيانات" });
+    }
+});
+
+// مسار إضافي لضمان التوافق الكامل مع دوال الفرونت إند
+app.post('/api/save-all-data', async (req, res) => {
+    try {
+        await CenterData.findOneAndUpdate(
+            { key: 'al_furqan_ultimate_db' },
+            { data: req.body },
+            { upsert: true, new: true }
+        );
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
