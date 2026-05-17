@@ -429,81 +429,94 @@
             myChart: null,
             currentPendingRequestId: null,
 
+            // 1. دالة تشغيل وتجهيز النظام المصلحة
             async init() {
-            await this.loadDB();
-            this.setupLogin(); 
-            this.setupEditUserForm(); 
-            this.setupCircleForm(); 
-            this.setupStudentForm(); 
-            this.setupTestForm(); 
-            this.setupRequestTestForm(); 
-            this.updateClock(); 
-            this.syncCounts(); 
-            
-            // التحقق من الجلسة السابقة فقط
-            const savedUserId = sessionStorage.getItem('logged_user_id');
-            if (savedUserId) { 
-                const user = this.db.users.find(u => u.id == savedUserId); 
-                if (user) { this.currentUser = user; this.startApp(); } 
-            }
-        },
+                await this.loadDB();
+                this.setupLogin(); 
+                this.setupEditUserForm(); 
+                this.setupCircleForm(); 
+                this.setupStudentForm(); 
+                this.setupTestForm(); 
+                this.setupRequestTestForm(); 
+                this.updateClock(); 
+                this.syncCounts(); 
 
-            // دالة تحميل البيانات المحدثة والمحمية من التعليق
+                // التحقق من وجود جلسة نشطة سابقة لإبقاء تسجيل الدخول
+                const savedUserId = sessionStorage.getItem('logged_user_id');
+                if (savedUserId && this.db && this.db.users) { 
+                    const user = this.db.users.find(u => u.id == savedUserId); 
+                    if (user) { this.currentUser = user; this.startApp(); } 
+                }
+            },
+
+            // 2. دالة تحميل وتأمين قاعدة البيانات الموحدة
             async loadDB() {
                 try {
-                    // نضع حداً أقصى لانتظار السيرفر (ثانيتين فقط) حتى لا تعلّق الشاشة
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-                    const response = await fetch(`${API_URL}/api/get-data`, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-
-                    if (response.ok) {
-                        const cloudData = await response.json();
-                        if (cloudData && cloudData.users && cloudData.users.length > 0) {
-                            this.db = cloudData;
-                            localStorage.setItem(DB_KEY, JSON.stringify(cloudData));
-                            console.log("تم تحميل البيانات بنجاح من السيرفر السحابي");
-                            return;
-                        }
+                    // محاولة جلب البيانات من السيرفر
+                    const cloudData = await loadDataFromServer();
+                    if (cloudData && cloudData.users && cloudData.users.length > 0) {
+                        this.db = cloudData;
+                        localStorage.setItem(DB_KEY, JSON.stringify(cloudData));
+                        return;
                     }
-                } catch (e) {
-                    console.log("السيرفر السحابي غير مستجيب، يتم الانتقال للبيانات الاحتياطية فوراً لمنع التعليق");
+                } catch(e) {
+                    console.log("تعذر الاتصال بالسيرفر السحابي، يتم تشغيل النظام محلياً.");
                 }
 
-                // الحل الاحتياطي السريع: التحميل من الذاكرة المحلية للمتصفح
+                // الحل الاحتياطي السريع والمضمون في حال عدم استجابة السيرفر
                 const local = localStorage.getItem(DB_KEY);
                 if (local) {
                     try {
                         this.db = JSON.parse(local);
-                        // تأكيد للتأكد من أن البيانات المحلية تحتوي على المستخدمين
-                        if (!this.db.users || this.db.users.length === 0) {
+                        // تأكيد حماية مصفوفة الحسابات
+                        if (!this.db || !this.db.users || this.db.users.length === 0) {
                             this.db = JSON.parse(JSON.stringify(initialData));
                         }
                     } catch(e) {
                         this.db = JSON.parse(JSON.stringify(initialData));
                     }
                 } else {
-                    // إذا كان النظام يفتح لأول مرة تماماً
                     this.db = JSON.parse(JSON.stringify(initialData));
                 }
-                
-                // حفظ نسخة نظيفة محلياً لضمان وجود حساب admin دائماً
-                localStorage.setItem(DB_KEY, JSON.stringify(this.db));
+
+                // التأكد من تهيئة الإعدادات الأساسية
+                if(!this.db.finance) this.db.finance = { budget: 75000, transactions: [] };
+                if(!this.db.students) this.db.students = [];
+                if(!this.db.circles) this.db.circles = [];
+                if(!this.db.dailyLogs) this.db.dailyLogs = [];
+                if(!this.db.tests) this.db.tests = [];
+                if(!this.db.testRequests) this.db.testRequests = [];
+                if(!this.db.settings) this.db.settings = initialData.settings;
             },
 
-            // دالة حفظ البيانات الموحدة
-            async saveDB() {
-                localStorage.setItem(DB_KEY, JSON.stringify(this.db));
-                try {
-                    await fetch(`${API_URL}/api/save-data`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.db)
-                    });
-                } catch (e) {
-                    console.error("فشل المزامنة السحابية اللحظية، تم الحفظ محلياً فقط"، e);
-                }
+            // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
+            setupLogin() {
+                const form = document.getElementById('login-form');
+                if (!form) return;
+                
+                form.onsubmit = async (e) => {
+                    e.preventDefault();
+                    const uName = document.getElementById('username').value.trim();
+                    const uPass = document.getElementById('password').value;
+
+                    if (!this.db || !this.db.users) {
+                        alert("خطأ في تحميل قاعدة البيانات، يرجى إعادة تحديث الصفحة.");
+                        return;
+                    }
+
+                    // البحث ومقارنة كلمة المرور المشفرة بـ btoa المتوافقة مع كودك الأساسي
+                    const user = this.db.users.find(u => u.username === uName && u.password === btoa(uPass));
+
+                    if (user) {
+                        this.currentUser = user;
+                        sessionStorage.setItem('logged_user_id', user.id);
+                        this.showToast(`أهلاً بك يا ${user.name}، تم تسجيل الدخول بنجاح`, 'success');
+                        this.startApp();
+                    } else {
+                        alert('اسم المستخدم أو كلمة المرور غير صحيحة! يرجى المحاولة مرة أخرى.');
+                    }
+                };
+            },
             },
             logActivity(action, details) {
                 if(!this.db.activityLogs) this.db.activityLogs = [];
