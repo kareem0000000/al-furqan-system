@@ -96,7 +96,7 @@
         </div>
     </div>
 
-    <div id="main-app" class="hidden flex flex-col md:flex-row min-h-screen">
+    <div id="main-App" class="hidden flex flex-col md:flex-row min-h-screen">
         
         <aside class="no-print w-full md:w-64 bg-white shadow-lg md:h-screen md:sticky md:top-0 z-10">
             <div class="p-6 border-b flex items-center space-x-3 space-x-reverse">
@@ -431,93 +431,90 @@
 
             // 1. دالة تشغيل وتجهيز النظام المصلحة
             async init() {
-                await this.loadDB();
-                this.setupLogin(); 
-                this.setupEditUserForm(); 
-                this.setupCircleForm(); 
-                this.setupStudentForm(); 
-                this.setupTestForm(); 
-                this.setupRequestTestForm(); 
-                this.updateClock(); 
-                this.syncCounts(); 
+            await this.loadDB();
+            this.setupLogin(); 
+            this.setupEditUserForm(); 
+            this.setupCircleForm(); 
+            this.setupStudentForm(); 
+            this.setupTestForm(); 
+            this.setupRequestTestForm(); 
+            this.updateClock(); 
+            this.syncCounts(); 
 
-                // التحقق من وجود جلسة نشطة سابقة لإبقاء تسجيل الدخول
-                const savedUserId = sessionStorage.getItem('logged_user_id');
-                if (savedUserId && this.db && this.db.users) { 
-                    const user = this.db.users.find(u => u.id == savedUserId); 
-                    if (user) { this.currentUser = user; this.startApp(); } 
-                }
-            },
+            // التحقق من وجود جلسة نشطة سابقة لإبقاء تسجيل الدخول
+            const savedUserId = sessionStorage.getItem('logged_user_id');
+            if (savedUserId && this.db && this.db.users) { 
+                const user = this.db.users.find(u => u.id == savedUserId); 
+                if (user) { this.currentUser = user; this.startApp(); } 
+            }
+        },
 
             // 2. دالة تحميل وتأمين قاعدة البيانات الموحدة
-            async loadDB() {
-                try {
-                    // محاولة جلب البيانات من السيرفر
-                    const cloudData = await loadDataFromServer();
-                    if (cloudData && cloudData.users && cloudData.users.length > 0) {
-                        this.db = cloudData;
-                        localStorage.setItem(DB_KEY, JSON.stringify(cloudData));
-                        return;
-                    }
-                } catch(e) {
-                    console.log("تعذر الاتصال بالسيرفر السحابي، يتم تشغيل النظام محلياً.");
+           async loadDB() {
+            try {
+                // محاولة جلب البيانات من السيرفر السحابي
+                const cloudData = await loadDataFromServer();
+                if (cloudData && cloudData.users && cloudData.users.length > 0) {
+                    this.db = cloudData;
+                    localStorage.setItem(DB_KEY, JSON.stringify(cloudData));
+                    return;
                 }
+            } catch(e) {
+                console.log("تعذر الاتصال بالسيرفر السحابي، يتم الانتقال للاحتياطي.");
+            }
 
-                // الحل الاحتياطي السريع والمضمون في حال عدم استجابة السيرفر
-                const local = localStorage.getItem(DB_KEY);
-                if (local) {
-                    try {
-                        this.db = JSON.parse(local);
-                        // تأكيد حماية مصفوفة الحسابات
-                        if (!this.db || !this.db.users || this.db.users.length === 0) {
-                            this.db = JSON.parse(JSON.stringify(initialData));
-                        }
-                    } catch(e) {
-                        this.db = JSON.parse(JSON.stringify(initialData));
-                    }
-                } else {
+            // الحل الاحتياطي السريع والمضمون محلياً من المتصفح لمنع التعليق
+            const local = localStorage.getItem(DB_KEY);
+            if (local) {
+                try {
+                    this.db = JSON.parse(local);
+                    if (typeof this.db === 'string') this.db = JSON.parse(this.db);
+                } catch(e) {
                     this.db = JSON.parse(JSON.stringify(initialData));
                 }
+            } else {
+                this.db = JSON.parse(JSON.stringify(initialData));
+            }
 
-                // التأكد من تهيئة الإعدادات الأساسية
-                if(!this.db.finance) this.db.finance = { budget: 75000, transactions: [] };
-                if(!this.db.students) this.db.students = [];
-                if(!this.db.circles) this.db.circles = [];
-                if(!this.db.dailyLogs) this.db.dailyLogs = [];
-                if(!this.db.tests) this.db.tests = [];
-                if(!this.db.testRequests) this.db.testRequests = [];
-                if(!this.db.settings) this.db.settings = initialData.settings;
-            },
+            // تأمين مصفوفات النظام الأساسية لمنع الأخطاء البرمجية
+            if(!this.db || !this.db.users) this.db = JSON.parse(JSON.stringify(initialData));
+            if(!this.db.finance) this.db.finance = { budget: 75000, transactions: [] };
+            if(!this.db.students) this.db.students = [];
+            if(!this.db.circles) this.db.circles = [];
+            if(!this.db.dailyLogs) this.db.dailyLogs = [];
+            if(!this.db.tests) this.db.tests = [];
+            if(!this.db.testRequests) this.db.testRequests = [];
+            if(!this.db.settings) this.db.settings = initialData.settings;
+        },
 
             // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
             setupLogin() {
-                const form = document.getElementById('login-form');
-                if (!form) return;
-                
-                form.onsubmit = async (e) => {
-                    e.preventDefault();
-                    const uName = document.getElementById('username').value.trim();
-                    const uPass = document.getElementById('password').value;
+            const form = document.getElementById('login-form');
+            if (!form) return;
+            
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const uName = document.getElementById('username').value.trim();
+                const uPass = document.getElementById('password').value;
 
-                    if (!this.db || !this.db.users) {
-                        alert("خطأ في تحميل قاعدة البيانات، يرجى إعادة تحديث الصفحة.");
-                        return;
-                    }
+                if (!this.db || !this.db.users) {
+                    alert("خطأ في تحميل البيانات، يرجى تحديث الصفحة.");
+                    return;
+                }
 
-                    // البحث ومقارنة كلمة المرور المشفرة بـ btoa المتوافقة مع كودك الأساسي
-                    const user = this.db.users.find(u => u.username === uName && u.password === btoa(uPass));
+                // البحث ومقارنة كلمة المرور بنظام التشفير btoa الافتراضي المتوافق مع حساباتك
+                const user = this.db.users.find(u => u.username === uName && u.password === btoa(uPass));
 
-                    if (user) {
-                        this.currentUser = user;
-                        sessionStorage.setItem('logged_user_id', user.id);
-                        this.showToast(`أهلاً بك يا ${user.name}، تم تسجيل الدخول بنجاح`, 'success');
-                        this.startApp();
-                    } else {
-                        alert('اسم المستخدم أو كلمة المرور غير صحيحة! يرجى المحاولة مرة أخرى.');
-                    }
-                };
-            },
-            },
+                if (user) {
+                    this.currentUser = user;
+                    sessionStorage.setItem('logged_user_id', user.id);
+                    this.showToast(`أهلاً بك يا ${user.name}، تم تسجيل الدخول بنجاح`, 'success');
+                    this.startApp();
+                } else {
+                    alert('اسم المستخدم أو كلمة المرور غير صحيحة! يرجى المحاولة مرة أخرى.');
+                }
+            };
+        },
             logActivity(action, details) {
                 if(!this.db.activityLogs) this.db.activityLogs = [];
                 this.db.activityLogs.push({
