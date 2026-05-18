@@ -333,17 +333,16 @@
         // ==========================================
         // 1. إعدادات الدوال السحابية والاتصال بالسيرفر
         // ==========================================
-       // تم حذف علامة الاستفهام لكي يتم الربط بالسيرفر السحابي و MongoDB مباشرة
-
-const API_URL = "https://al-wehda-system.onrender.com"; 
-
-const DB_KEY = 'al_furqan_ultimate_db';
+        const API_URL = "https://al-wehda-system.onrender.com";
+        const DB_KEY = 'al_furqan_ultimate_db';
 
         async function loadDataFromServer() {
             try {
                 const response = await fetch(`${API_URL}/api/get-data`);
                 if (response.ok) return await response.json();
-            } catch (e) { console.error("خطأ في جلب البيانات من السيرفر السحابي", e); }
+            } catch (e) { 
+                console.error("خطأ في جلب البيانات من السيرفر السحابي", e);
+            }
             return null;
         }
 
@@ -354,9 +353,10 @@ const DB_KEY = 'al_furqan_ultimate_db';
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-            } catch (e) { console.error("خطأ في حفظ البيانات على السيرفر السحابي", e); }
+            } catch (e) { 
+                console.error("خطأ في حفظ البيانات على السيرفر السحابي", e);
+            }
         }
-
         const DB_KEY = 'al_furqan_ultimate_db';
 
         // مصفوفة أسماء السور المسبقة مع عدد آياتها وعدد صفحاتها للعمليات الحسابية
@@ -498,30 +498,39 @@ const DB_KEY = 'al_furqan_ultimate_db';
             },
 
             // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
-           setupLogin() {
+          setupLogin() {
             const form = document.getElementById('login-form');
             if (!form) return;
             
             form.onsubmit = async (e) => {
-                // ⚠️ هذا السطر هو الأهم: يمنع المتصفح من إعادة تحميل الصفحة نهائياً عند الضغط على الزر
+                // ⚠️ منع المتصفح تماماً من إعادة تحميل الصفحة أو قراءة علامات الاستفهام في الرابط
                 e.preventDefault(); 
                 
                 const uName = document.getElementById('username').value.trim();
                 const uPass = document.getElementById('password').value;
 
                 if (!this.db || !this.db.users) {
-                    alert("خطأ في تحميل البيانات من السيرفر، يرجى تحديث الصفحة.");
+                    alert("يتم الآن الاتصال بالسيرفر وجلب البيانات السحابية.. يرجى الانتظار ثوانٍ ثم الضغط مجدداً.");
                     return;
                 }
 
-                // التحقق من الحساب بتشغير الباسورد لمطابقة السيرفر
+                // التحقق من الحساب بمطابقة تشفير الباسورد الافتراضي في النظام
                 const user = this.db.users.find(u => u.username === uName && u.password === btoa(uPass));
 
                 if (user) {
                     this.currentUser = user;
                     sessionStorage.setItem('logged_user_id', user.id);
-                    this.showToast(`أهلاً بك يا ${user.name}، تم تسجيل الدخول بنجاح`, 'success');
+                    
+                    // إخفاء شاشة تسجيل الدخول وإظهار التطبيق الرئيسي
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('main-App').classList.remove('hidden');
+                    
                     this.startApp();
+                    
+                    // تذكير بالنجاح
+                    if (typeof this.showToast === 'function') {
+                        this.showToast(`أهلاً بك يا ${user.name}، تم تسجيل الدخول بنجاح`, 'success');
+                    }
                 } else {
                     alert('اسم المستخدم أو كلمة المرور غير صحيحة! يرجى المحاولة مرة أخرى.');
                 }
