@@ -330,26 +330,19 @@
     </div>
 
     <script>
-        // تكوين الإعدادات وعناوين السيرفر
+        // ==========================================
+        // 1. إعدادات الدوال السحابية والاتصال بالسيرفر
+        // ==========================================
         const API_URL = window.location.origin;
-        const DB_KEY = 'al_furqan_ultimate_db';
 
-        // دالة جلب البيانات من السيرفر السحابي مع تايم أوت لحماية الشاشة من التجمد
         async function loadDataFromServer() {
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 ثانية كحد أقصى للانتظار
-
-                const response = await fetch(`${API_URL}/api/get-data`, { signal: controller.signal });
-                clearTimeout(timeoutId);
+                const response = await fetch(`${API_URL}/api/get-data`);
                 if (response.ok) return await response.json();
-            } catch (e) { 
-                console.warn("تنبيه: السيرفر السحابي لم يستجب في الوقت المحدد، سيتم الاعتماد على البيانات المحلية."); 
-            }
+            } catch (e) { console.error("خطأ في جلب البيانات من السيرفر السحابي", e); }
             return null;
         }
 
-        // دالة حفظ وبث البيانات للسيرفر السحابي
         async function saveDataToServer(data) {
             try {
                 await fetch(`${API_URL}/api/save-data`, {
@@ -357,12 +350,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-            } catch (e) { 
-                console.error("خطأ في مزامنة البيانات مع السيرفر السحابي", e); 
-            }
+            } catch (e) { console.error("خطأ في حفظ البيانات على السيرفر السحابي", e); }
         }
 
-        // بيانات السور والأجزاء للعمليات الحسابية داخل النظام
+        const DB_KEY = 'al_furqan_ultimate_db';
+
+        // مصفوفة أسماء السور المسبقة مع عدد آياتها وعدد صفحاتها للعمليات الحسابية
         const QURAN_METADATA = {
             "الفاتحة": { verses: 7, pages: 1 }, "البقرة": { verses: 286, pages: 48 }, "آل عمران": { verses: 200, pages: 27 },
             "النساء": { verses: 176, pages: 29 }, "المائدة": { verses: 120, pages: 22 }, "الأنعام": { verses: 165, pages: 23 },
@@ -403,30 +396,32 @@
             "الكافرون": { verses: 6, pages: 0.3 }, "النصر": { verses: 3, pages: 0.2 }, "المسد": { verses: 5, pages: 0.3 },
             "الإخلاص": { verses: 4, pages: 0.2 }, "الفلق": { verses: 5, pages: 0.2 }, "الناس": { verses: 6, pages: 0.2 }
         };
+
         const QURAN_SURAHS = Object.keys(QURAN_METADATA);
 
-        const initialData = { 
+        const initialData = {
             settings: { salaryPerStudent: 50, pointReward: 5 }, 
-            users: [ 
-                { id: 1, username: 'admin', password: btoa('123'), role: 'admin', name: 'عبدالله المدير', idNumber: '123456789', dob: '1990-01-01', circleId: null }, 
-                { id: 2, username: 'teacher1', password: btoa('123'), role: 'teacher', name: 'أحمد محمد', idNumber: '987654321', dob: '1995-05-15', circleId: 1 }, 
-                { id: 3, username: 'teacher2', password: btoa('123'), role: 'teacher', name: 'سعيد علي', idNumber: '456789123', dob: '1992-10-20', circleId: 2 } 
-            ], 
-            circles: [ 
-                { id: 1, name: 'حلقة الفجر', category: 'حفظ', teacher: 'أحمد محمد', studentsCount: 0, attendance: '96%', status: 'نشطة' }, 
-                { id: 2, name: 'حلقة العصر', category: 'تمكين', teacher: 'سعيد علي', studentsCount: 0, attendance: '92%', status: 'نشطة' } 
+            users: [
+                { id: 1, username: 'admin', password: btoa('123'), role: 'admin', name: 'عبدالله المدير', idNumber: '123456789', dob: '1990-01-01', circleId: null },
+                { id: 2, username: 'teacher1', password: btoa('123'), role: 'teacher', name: 'أحمد محمد', idNumber: '987654321', dob: '1995-05-15', circleId: 1 },
+                { id: 3, username: 'teacher2', password: btoa('123'), role: 'teacher', name: 'سعيد علي', idNumber: '456789123', dob: '1992-10-20', circleId: 2 }
             ],
-            finance: { budget: 75000, transactions: [] },
-            students: [],
+            circles: [
+                { id: 1, name: 'حلقة الفجر', category: 'حفظ', teacher: 'أحمد محمد', studentsCount: 0, attendance: '96%', status: 'نشطة' },
+                { id: 2, name: 'حلقة العصر', category: 'تمكين', teacher: 'سعيد علي', studentsCount: 0, attendance: '92%', status: 'نشطة' }
+            ],
+            students: [
+                { id: 101, name: 'محمد أحمد علي', circleId: 1, phone: '972590000000', status: 'نشط', joinDate: '2023-10-01', juzCount: 5, points: 150 },
+                { id: 102, name: 'ياسين حسن عمر', circleId: 1, phone: '972590000001', status: 'نشط', joinDate: '2023-10-05', juzCount: 2, points: 80 },
+                { id: 103, name: 'حمزة إبراهيم', circleId: 2, phone: '972590000002', status: 'نشط', joinDate: '2023-11-01', juzCount: 30, points: 500 }
+            ],
             dailyLogs: [],
+            finance: { budget: 75000, transactions: [] },
             tests: [],
-            testRequests: [],
-            activityLogs: []
+            activityLogs: [],
+            testRequests: [] 
         };
 
-        // ==========================================
-        // كائن التطبيق الموحد الشامل - مصلح ومؤمن بنسبة 100%
-        // ==========================================
         const App = {
             db: {},
             currentUser: null,
@@ -434,6 +429,7 @@
             myChart: null,
             currentPendingRequestId: null,
 
+            // 1. دالة تشغيل وتجهيز النظام المصلحة
             async init() {
                 await this.loadDB();
                 this.setupLogin(); 
@@ -445,6 +441,7 @@
                 this.updateClock(); 
                 this.syncCounts(); 
 
+                // التحقق من وجود جلسة نشطة سابقة لإبقاء تسجيل الدخول
                 const savedUserId = sessionStorage.getItem('logged_user_id');
                 if (savedUserId && this.db && this.db.users) { 
                     const user = this.db.users.find(u => u.id == savedUserId); 
@@ -452,8 +449,10 @@
                 }
             },
 
-            async loadDB() {
+            // 2. دالة تحميل وتأمين قاعدة البيانات الموحدة
+           async loadDB() {
                 try {
+                    // محاولة جلب البيانات من السيرفر السحابي
                     const cloudData = await loadDataFromServer();
                     if (cloudData && cloudData.users && cloudData.users.length > 0) {
                         this.db = cloudData;
@@ -461,9 +460,10 @@
                         return;
                     }
                 } catch(e) {
-                    console.log("جاري التشغيل عبر البيانات الاحتياطية.");
+                    console.log("تعذر الاتصال بالسيرفر السحابي، يتم الانتقال للاحتياطي.");
                 }
 
+                // الحل الاحتياطي السريع والمضمون محلياً من المتصفح لمنع التعليق
                 const local = localStorage.getItem(DB_KEY);
                 if (local) {
                     try {
@@ -476,7 +476,7 @@
                     this.db = JSON.parse(JSON.stringify(initialData));
                 }
 
-                // تأمين مصفوفات النظام الأساسية للحفظ والتفاعل
+                // تأمين مصفوفات النظام الأساسية لمنع الأخطاء البرمجية
                 if(!this.db || !this.db.users) this.db = JSON.parse(JSON.stringify(initialData));
                 if(!this.db.finance) this.db.finance = { budget: 75000, transactions: [] };
                 if(!this.db.students) this.db.students = [];
@@ -485,31 +485,15 @@
                 if(!this.db.tests) this.db.tests = [];
                 if(!this.db.testRequests) this.db.testRequests = [];
                 if(!this.db.settings) this.db.settings = initialData.settings;
-                if(!this.db.activityLogs) this.db.activityLogs = [];
-
-                this.db.students.forEach(s => {
-                    if(s.juzCount === undefined) s.juzCount = 0;
-                    if(s.points === undefined) s.points = 0;
-                    s.juzCount = parseInt(s.juzCount) || 0;
-                });
             },
 
+            // إضافة دالة الحفظ المفقودة لحفظ البيانات محليا وعلى السيرفر
             async saveDB() {
                 localStorage.setItem(DB_KEY, JSON.stringify(this.db));
-                await saveDataToServer(this.db); // المزامنة والبث الفوري للسيرفر لمشاركة البيانات
-                this.syncCounts();
-                
-                // إعادة تحديث الشاشة المفتوحة حالياً تلقائياً لعكس البيانات الجديدة للمستخدم
-                if (this.currentUser) {
-                    const activeLink = document.querySelector('.sidebar-link.active');
-                    if (activeLink) {
-                        const onclickAttr = activeLink.getAttribute('onclick');
-                        const pageMatch = onclickAttr.match(/'([^']+)'/);
-                        if (pageMatch) this.navigateTo(pageMatch[1]);
-                    }
-                }
+                await saveDataToServer(this.db);
             },
 
+            // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
             setupLogin() {
                 const form = document.getElementById('login-form');
                 if (!form) return;
@@ -524,7 +508,7 @@
                         return;
                     }
 
-                    // مقارنة كلمة المرور وتشفيرها لمطابقة الكود الأساسي الخاص بك
+                    // البحث ومقارنة كلمة المرور بنظام التشفير btoa الافتراضي المتوافق مع حساباتك
                     const user = this.db.users.find(u => u.username === uName && u.password === btoa(uPass));
 
                     if (user) {
@@ -534,341 +518,1762 @@
                         this.startApp();
                     } else {
                         alert('اسم المستخدم أو كلمة المرور غير صحيحة! يرجى المحاولة مرة أخرى.');
+                        this.showToast('فشل تسجيل الدخول، بيانات غير صحيحة', 'error');
                     }
                 };
+            },
+
+            logActivity(action, details) {
+                if(!this.db.activityLogs) this.db.activityLogs = [];
+                this.db.activityLogs.push({
+                    id: Date.now(),
+                    user: this.currentUser ? this.currentUser.name : 'النظام',
+                    action: action,
+                    details: details,
+                    date: new Date().toLocaleString('ar-SA')
+                });
+                this.saveDB();
+            },
+
+            syncCounts() {
+                if(!this.db.circles) return;
+                this.db.circles.forEach(c => {
+                    c.studentsCount = this.db.students.filter(s => s.circleId == c.id && s.status === 'نشط').length;
+                });
+            },
+
+            // دالة لحساب عدد الصفحات بناءً على الآيات
+            calculatePages(surahName, ayahInput) {
+                if (!surahName || !ayahInput || !QURAN_METADATA[surahName]) return 0;
+                let ayahCount = 0;
+                if (ayahInput.includes('-')) {
+                    const parts = ayahInput.split('-').map(p => parseInt(p.trim()));
+                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                        ayahCount = Math.abs(parts[1] - parts[0]) + 1;
+                    }
+                } else {
+                    ayahCount = parseInt(ayahInput.trim()) || 0;
+                }
+                if (ayahCount <= 0) return 0;
+                const meta = QURAN_METADATA[surahName];
+                const pageEstimate = (ayahCount / meta.verses) * meta.pages;
+                return parseFloat(pageEstimate.toFixed(2));
+            },
+
+            exportBackup() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.db));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "furqan_backup_" + new Date().toISOString().split('T')[0] + ".json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                this.showToast("تم تصدير النسخة الاحتياطية بنجاح", "success");
+                this.logActivity('تصدير بيانات', 'نسخة احتياطية كاملة');
+            },
+
+            importBackup(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        this.db = importedData;
+                        await this.saveDB();
+                        this.showToast("تمت استعادة البيانات بنجاح، سيتم إعادة تحميل الصفحة");
+                        this.logActivity('استعادة بيانات', 'من ملف خارجي');
+                        setTimeout(() => location.reload(), 1500);
+                    } catch (err) {
+                        this.showToast("ملف غير صالح!", "error");
+                    }
+                };
+                reader.readAsText(file);
+            },
+
+            showToast(msg, type = 'info') {
+                const toast = document.getElementById('toast');
+                const toastMsg = document.getElementById('toast-msg');
+                const toastIcon = document.getElementById('toast-icon');
+                toastMsg.textContent = msg;
+                if(type === 'error') toastIcon.className = "fas fa-exclamation-triangle text-red-500";
+                else if(type === 'success') toastIcon.className = "fas fa-check-circle text-green-500";
+                else toastIcon.className = "fas fa-info-circle text-primary";
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 3000);
             },
 
             startApp() {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-App').classList.remove('hidden');
-                document.getElementById('user-display-name').innerText = this.currentUser.name;
-                document.getElementById('user-avatar-initial').innerText = this.currentUser.name.trim().charAt(0);
+                this.updateUserInfoUI();
+                this.renderSidebar();
                 
-                const roleBadge = document.getElementById('user-role-badge');
-                if (this.currentUser.role === 'admin') {
-                    roleBadge.innerText = 'مدير النظام';
-                    document.getElementById('admin-menu').classList.remove('hidden');
-                    document.getElementById('admin-quick-actions').classList.remove('hidden');
-                    document.getElementById('teacher-menu').classList.add('hidden');
-                    this.renderAdminNav();
-                    this.navigateTo('dashboard');
+                if (this.currentUser.role === 'admin' || this.currentUser.role === 'supervisor') {
+                    this.navigate('admin-dashboard');
                 } else {
-                    roleBadge.innerText = this.currentUser.role === 'supervisor' ? 'مشرف أكاديمي' : 'محفظ الحلقة';
-                    document.getElementById('admin-menu').classList.add('hidden');
-                    document.getElementById('admin-quick-actions').classList.add('hidden');
-                    document.getElementById('teacher-menu').classList.remove('hidden');
-                    this.renderTeacherNav();
-                    this.navigateTo('my-circle');
+                    this.navigate('teacher-daily');
+                }
+                
+                if (this.currentUser.role === 'admin' || this.currentUser.role === 'supervisor') {
+                    document.getElementById('admin-quick-actions').classList.remove('hidden');
                 }
             },
 
-            logout() {
+            updateUserInfoUI() {
+                document.getElementById('user-display-name').textContent = this.currentUser.name;
+                document.getElementById('user-avatar-initial').textContent = this.currentUser.name[0];
+                
+                let roleName = 'محفظ الحلقة';
+                if(this.currentUser.role === 'admin') roleName = 'مدير المركز';
+                else if(this.currentUser.role === 'supervisor') roleName = 'مشرف أكاديمي';
+                
+                document.getElementById('user-role-badge').textContent = roleName;
+            },
+
+            logout() { 
+                this.logActivity('تسجيل خروج', this.currentUser.name);
                 sessionStorage.removeItem('logged_user_id');
-                window.location.reload();
+                location.reload(); 
+            },
+
+            renderSidebar() {
+                const adminNav = document.getElementById('nav-admin-main');
+                const teacherNav = document.getElementById('nav-teacher-main');
+                
+                if (this.currentUser.role === 'admin' || this.currentUser.role === 'supervisor') {
+                    document.getElementById('admin-menu').classList.remove('hidden');
+                    const items = [
+                        { id: 'admin-dashboard', label: 'لوحة التحكم', icon: 'fa-tachometer-alt' },
+                        { id: 'admin-circles', label: 'إدارة الحلقات', icon: 'fa-layer-group' },
+                        { id: 'admin-students', label: 'إدارة الطلاب', icon: 'fa-users' },
+                        { id: 'admin-tests-board', label: 'لوحة الاختبارات', icon: 'fa-vial' }, 
+                        { id: 'admin-users', label: 'إدارة المحفظين', icon: 'fa-user-shield' },
+                        { id: 'admin-monthly-reports', label: 'مركز التقارير', icon: 'fa-chart-pie' }
+                    ];
+                    
+                    if(this.currentUser.role === 'admin') {
+                        items.push({ id: 'admin-finance', label: 'المالية والرواتب', icon: 'fa-coins' });
+                    }
+                    
+                    adminNav.innerHTML = items.map(i => this.componentSidebarLink(i)).join('');
+                } else {
+                    document.getElementById('teacher-menu').classList.remove('hidden');
+                    const items = [
+                        { id: 'teacher-daily', label: 'التقرير اليومي', icon: 'fa-edit' },
+                        { id: 'teacher-students', label: 'طلابي', icon: 'fa-user-graduate' },
+                        { id: 'teacher-profile', label: 'ملفي الشخصي', icon: 'fa-user-cog' }
+                    ];
+                    teacherNav.innerHTML = items.map(i => this.componentSidebarLink(i)).join('');
+                }
+            },
+
+            componentSidebarLink(item) {
+                return `
+                    <li>
+                        <button onclick="App.navigate('${item.id}')" id="nav-btn-${item.id}" class="sidebar-link w-full flex items-center space-x-3 space-x-reverse p-3 rounded-xl hover:bg-gray-50 transition-all font-bold text-gray-500 text-sm">
+                            <i class="fas ${item.icon} w-6 text-center"></i>
+                            <span>${item.label}</span>
+                        </button>
+                    </li>
+                `;
+            },
+
+            navigate(id) {
+                const adminPages = ['admin-dashboard', 'admin-students', 'admin-users', 'admin-circles', 'admin-tests-board', 'admin-finance', 'admin-monthly-reports', 'teacher-monthly-reports'];
+                if(this.currentUser.role === 'teacher' && adminPages.includes(id)) {
+                    this.showToast("عذراً، لا تملك صلاحية الوصول لصفحات الإدارة أو التقارير المركزية", "error");
+                    return;
+                }
+
+                document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+                const btn = document.getElementById(`nav-btn-${id}`);
+                if(btn) btn.classList.add('active');
+                
+                const area = document.getElementById('content-area');
+                area.innerHTML = '<div class="flex flex-col items-center justify-center p-20"><i class="fas fa-circle-notch fa-spin text-primary text-4xl mb-4"></i><p class="text-gray-400 font-bold animate-pulse">جاري تحميل البيانات...</p></div>';
+
+                setTimeout(() => {
+                    switch(id) {
+                        case 'admin-dashboard': this.renderAdminDashboard(); break;
+                        case 'admin-students': this.renderAdminStudents(); break;
+                        case 'admin-users': this.renderAdminUsers(); break;
+                        case 'admin-circles': this.renderAdminCircles(); break;
+                        case 'admin-tests-board': this.renderAdminTestsBoard(); break; 
+                        case 'teacher-daily': this.renderTeacherDaily(); break;
+                        case 'teacher-students': this.renderTeacherStudents(); break;
+                        case 'teacher-profile': this.renderUserProfile(); break;
+                        case 'admin-finance': this.renderAdminFinance(); break;
+                        case 'admin-monthly-reports': this.renderMonthlyReports('admin'); break; 
+                        case 'teacher-monthly-reports': this.renderMonthlyReports('teacher'); break; 
+                    }
+                }, 100);
+
+                const titleEl = document.getElementById('page-title');
+                if(titleEl && btn) titleEl.textContent = btn.querySelector('span').textContent;
+            },
+
+            renderAdminCircles() {
+                if(this.currentUser.role === 'teacher') return;
+                this.syncCounts();
+                const area = document.getElementById('content-area');
+                area.innerHTML = `
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-black text-gray-800 text-lg">نظرة عامة على الحلقات</h3>
+                        <button onclick="App.openAddCircleModal()" class="bg-secondary text-white px-5 py-2 rounded-xl text-xs font-black shadow-lg">إضافة حلقة +</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${this.db.circles.length > 0 ? this.db.circles.map(c => `
+                            <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
+                                <div class="absolute top-0 left-0 w-2 h-full bg-primary opacity-20 group-hover:opacity-100 transition-all"></div>
+                                <div class="flex justify-between">
+                                    <h4 class="font-black text-primary mb-1">${c.name} <span class="text-[9px] font-bold text-gray-400">(${c.category || 'عام'})</span></h4>
+                                    <div class="flex gap-2">
+                                        <button onclick="App.openEditCircleModal(${c.id})" class="text-blue-400 hover:text-blue-600 text-xs"><i class="fas fa-edit"></i></button>
+                                        <button onclick="App.deleteCircle(${c.id})" class="text-red-300 hover:text-red-500 text-xs"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                                <p class="text-xs font-bold text-gray-400 mb-4">المحفظ: ${c.teacher}</p>
+                                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-2xl">
+                                    <div class="text-center">
+                                        <p class="text-[10px] font-black text-gray-400">الطلاب</p>
+                                        <p class="text-sm font-black text-gray-700">${c.studentsCount}</p>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-[10px] font-black text-gray-400">الحالة</p>
+                                        <p class="text-[10px] font-black text-green-600">${c.status || 'نشطة'}</p>
+                                    </div>
+                                    <div class="text-center">
+                                        <button onclick="App.navigate('admin-students')" class="text-primary hover:scale-110 transition-all"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('') : '<p class="text-gray-400 text-center col-span-full py-10 font-bold">لا يوجد حلقات حالياً</p>'}
+                    </div>
+                `;
+                this.updateCircleTeacherOptions();
+            },
+
+            updateCircleTeacherOptions() {
+                const teacherSelect = document.getElementById('new-circle-teacher');
+                if(teacherSelect) {
+                    teacherSelect.innerHTML = this.db.users.filter(u => u.role === 'teacher').map(u => `<option value="${u.name}" data-userid="${u.id}">${u.name}</option>`).join('');
+                }
+            },
+
+            openAddCircleModal() {
+                if(this.currentUser.role === 'teacher') return;
+                document.getElementById('form-add-circle').reset();
+                document.getElementById('edit-circle-id').value = '';
+                document.getElementById('circle-modal-title').textContent = 'إضافة حلقة قرآنية جديدة';
+                this.updateCircleTeacherOptions();
+                this.openModal('modal-add-circle');
+            },
+
+            openEditCircleModal(circleId) {
+                if(this.currentUser.role === 'teacher') return;
+                const circle = this.db.circles.find(c => c.id == circleId);
+                if(circle) {
+                    document.getElementById('edit-circle-id').value = circle.id;
+                    document.getElementById('new-circle-name').value = circle.name;
+                    document.getElementById('new-circle-category').value = circle.category || '';
+                    document.getElementById('circle-modal-title').textContent = 'تعديل بيانات الحلقة';
+                    this.updateCircleTeacherOptions();
+                    document.getElementById('new-circle-teacher').value = circle.teacher;
+                    this.openModal('modal-add-circle');
+                }
+            },
+
+            renderAdminTestsBoard() {
+                if(this.currentUser.role === 'teacher') return;
+                const area = document.getElementById('content-area');
+                const tests = this.db.tests || [];
+                const requests = (this.db.testRequests || []).filter(r => r.status === 'pending');
+                
+                area.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                            <p class="text-xs text-gray-400 font-bold uppercase mb-1">إجمالي الاختبارات</p>
+                            <h4 class="text-3xl font-black text-primary">${tests.length}</h4>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                            <p class="text-xs text-gray-400 font-bold uppercase mb-1">طلبات بانتظار الاعتماد</p>
+                            <h4 class="text-3xl font-black text-orange-500">${requests.length}</h4>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                            <p class="text-xs text-gray-400 font-bold uppercase mb-1">متوسط الدرجات</p>
+                            <h4 class="text-3xl font-black text-green-600">
+                                ${tests.length > 0 ? Math.round(tests.reduce((acc, t) => acc + parseInt(t.score), 0) / tests.length) : 0}%
+                            </h4>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                        <div class="p-6 border-b flex justify-between items-center bg-gray-50/50">
+                            <h3 class="font-black">سجل الاختبارات المعتمدة</h3>
+                            <button onclick="window.print()" class="text-xs font-bold text-gray-500"><i class="fas fa-print ml-1"></i> طباعة السجل</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right">
+                                <thead class="bg-gray-50 text-[10px] font-black text-gray-400">
+                                    <tr>
+                                        <th class="p-4">الطالب</th>
+                                        <th class="p-4">الجزء</th>
+                                        <th class="p-4">الدرجة</th>
+                                        <th class="p-4">التقدير</th>
+                                        <th class="p-4">التاريخ</th>
+                                        <th class="p-4">إجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50">
+                                    ${tests.length > 0 ? tests.slice().reverse().map(t => {
+                                        const s = this.db.students.find(st => st.id == t.studentId);
+                                        return `
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="p-4 font-bold text-sm">${s ? s.name : 'طالب محذوف'}</td>
+                                                <td class="p-4 text-xs font-black text-primary">${t.part}</td>
+                                                <td class="p-4 text-xs font-black">${t.score}%</td>
+                                                <td class="p-4"><span class="px-2 py-1 rounded-lg bg-blue-50 text-blue-600 text-[10px] font-black">${t.grade}</span></td>
+                                                <td class="p-4 text-xs text-gray-400">${t.date}</td>
+                                                <td class="p-4"><button onclick="App.deleteTest(${t.id})" class="text-red-300 hover:text-red-500"><i class="fas fa-trash-alt"></i></button></td>
+                                            </tr>
+                                        `;
+                                    }).join('') : '<tr><td colspan="6" class="text-center py-10 text-gray-400 font-bold">لا يوجد اختبارات مسجلة</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            },
+
+            deleteTest(testId) {
+                if(this.currentUser.role === 'teacher') return;
+                if(confirm('هل أنت متأكد من حذف نتيجة هذا الاختبار؟')) {
+                    this.db.tests = this.db.tests.filter(t => t.id !== testId);
+                    this.saveDB();
+                    this.renderAdminTestsBoard();
+                    this.showToast("تم حذف نتيجة الاختبار");
+                }
+            },
+
+            deleteCircle(id) {
+                if(this.currentUser.role === 'teacher') return;
+                if(confirm('هل أنت متأكد من حذف هذه الحلقة؟ سيتم تحويل طلابها إلى طلاب بدون حلقة.')) {
+                    this.db.students.forEach(s => { if(s.circleId == id) s.circleId = null; });
+                    this.db.users.forEach(u => { if(u.circleId == id) u.circleId = null; });
+                    this.db.circles = this.db.circles.filter(c => c.id !== id);
+                    this.logActivity('حذف حلقة', `ID: ${id}`);
+                    this.saveDB();
+                    this.renderAdminCircles();
+                }
+            },
+
+            setupCircleForm() {
+                const form = document.getElementById('form-add-circle');
+                if(!form) return;
+                form.onsubmit = (e) => {
+                    e.preventDefault();
+                    if(this.currentUser.role === 'teacher') return;
+                    const teacherSelect = document.getElementById('new-circle-teacher');
+                    const selectedTeacherName = teacherSelect.value;
+                    const selectedTeacherId = teacherSelect.options[teacherSelect.selectedIndex].dataset.userid;
+                    const editId = document.getElementById('edit-circle-id').value;
+
+                    if (editId) {
+                        const idx = this.db.circles.findIndex(c => c.id == editId);
+                        if (idx > -1) {
+                            this.db.circles[idx].name = document.getElementById('new-circle-name').value;
+                            this.db.circles[idx].category = document.getElementById('new-circle-category').value;
+                            this.db.circles[idx].teacher = selectedTeacherName;
+                            
+                            this.db.users.forEach(u => { if(u.circleId == editId) u.circleId = null; });
+                            const teacherIdx = this.db.users.findIndex(u => u.id == selectedTeacherId);
+                            if(teacherIdx > -1) this.db.users[teacherIdx].circleId = editId;
+
+                            this.logActivity('تعديل حلقة', this.db.circles[idx].name);
+                            this.showToast("تم تحديث بيانات الحلقة بنجاح", "success");
+                        }
+                    } else {
+                        const circleId = Date.now();
+                        const newCircle = {
+                            id: circleId,
+                            name: document.getElementById('new-circle-name').value,
+                            category: document.getElementById('new-circle-category').value,
+                            teacher: selectedTeacherName,
+                            studentsCount: 0,
+                            attendance: '0%',
+                            status: 'نشطة'
+                        };
+                        const teacherIdx = this.db.users.findIndex(u => u.id == selectedTeacherId);
+                        if(teacherIdx > -1) this.db.users[teacherIdx].circleId = circleId;
+                        this.db.circles.push(newCircle);
+                        this.logActivity('إضافة حلقة', newCircle.name);
+                        this.showToast("تم إنشاء الحلقة بنجاح", "success");
+                    }
+                    
+                    this.saveDB();
+                    this.closeModal('modal-add-circle');
+                    this.renderAdminCircles();
+                    form.reset();
+                };
+            },
+
+            renderAdminUsers() {
+                if(this.currentUser.role === 'teacher') return;
+                const area = document.getElementById('content-area');
+                area.innerHTML = `
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b flex justify-between items-center bg-gray-50/50">
+                            <h3 class="font-black">إدارة حسابات النظام والمحفظين</h3>
+                            <button onclick="App.openAddUserModal()" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg">إضافة محفظ جديد +</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right">
+                                <thead class="bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                                    <tr>
+                                        <th class="p-4">الاسم</th>
+                                        <th class="p-4">رقم الهوية</th>
+                                        <th class="p-4">اسم المستخدم</th>
+                                        <th class="p-4">الحلقة</th>
+                                        <th class="p-4">الصلاحية</th>
+                                        <th class="p-4">الإجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50">
+                                    ${this.db.users.map(u => `
+                                        <tr class="hover:bg-gray-50 transition-all group">
+                                            <td class="p-4 font-bold text-sm text-gray-700">${u.name}</td>
+                                            <td class="p-4 text-xs font-bold text-gray-400">${u.idNumber || '---'}</td>
+                                            <td class="p-4 text-xs font-black text-primary">${u.username}</td>
+                                            <td class="p-4 text-xs font-bold text-gray-400">${this.db.circles.find(c => c.id == u.circleId)?.name || 'بدون حلقة'}</td>
+                                            <td class="p-4"><span class="px-2 py-1 rounded-lg ${u.role === 'admin' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'} text-[10px] font-black">${u.role === 'admin' ? 'مدير' : u.role === 'supervisor' ? 'مشرف' : 'محفظ'}</span></td>
+                                            <td class="p-4 flex space-x-2 space-x-reverse">
+                                                <button onclick="App.openEditUserModal(${u.id})" class="bg-white border border-gray-200 text-gray-600 px-3 py-1 rounded-lg text-[10px] font-black hover:bg-primary hover:text-white transition-all">تعديل</button>
+                                                ${u.id !== this.currentUser.id ? `<button onclick="App.deleteUser(${u.id})" class="text-red-400 p-1 hover:text-red-600"><i class="fas fa-trash"></i></button>` : ''}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            },
+
+            openAddUserModal() {
+                if(this.currentUser.role === 'teacher') return;
+                document.getElementById('form-edit-user').reset();
+                document.getElementById('edit-user-id').value = '';
+                document.getElementById('user-modal-title').textContent = 'إضافة مستخدم جديد';
+                document.getElementById('role-select-container').classList.remove('hidden');
+                document.getElementById('edit-user-username').readOnly = false;
+                document.getElementById('edit-user-role').disabled = false;
+                this.openModal('modal-edit-user');
+            },
+
+            openEditUserModal(userId) {
+                const user = this.db.users.find(u => u.id === userId);
+                if (user) {
+                    if(this.currentUser.role === 'teacher' && userId !== this.currentUser.id) {
+                        this.showToast("لا تملك صلاحية تعديل بيانات محفظين آخرين", "error");
+                        return;
+                    }
+                    document.getElementById('edit-user-id').value = user.id;
+                    document.getElementById('edit-user-name').value = user.name;
+                    document.getElementById('edit-user-username').value = user.username;
+                    document.getElementById('edit-user-role').value = user.role;
+                    document.getElementById('edit-user-id-number').value = user.idNumber || '';
+                    document.getElementById('edit-user-dob').value = user.dob || '';
+                    try { document.getElementById('edit-user-pass').value = atob(user.password); } 
+                    catch(e) { document.getElementById('edit-user-pass').value = user.password; }
+                    document.getElementById('user-modal-title').textContent = 'تعديل بيانات الحساب';
+                    if(this.currentUser.role === 'teacher' && userId === this.currentUser.id) {
+                        document.getElementById('role-select-container').classList.add('hidden');
+                        document.getElementById('edit-user-username').readOnly = true;
+                    } else {
+                        document.getElementById('role-select-container').classList.remove('hidden');
+                        document.getElementById('edit-user-username').readOnly = false;
+                        document.getElementById('edit-user-role').disabled = false;
+                    }
+                    this.openModal('modal-edit-user');
+                }
+            },
+
+            deleteUser(id) {
+                if(this.currentUser.role === 'teacher') return;
+                if(confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
+                    this.db.users = this.db.users.filter(u => u.id !== id);
+                    this.logActivity('حذف مستخدم', `ID: ${id}`);
+                    this.saveDB();
+                    this.renderAdminUsers();
+                    this.showToast('تم الحذف بنجاح');
+                }
+            },
+
+            setupEditUserForm() {
+                const form = document.getElementById('form-edit-user');
+                if(!form) return;
+                form.onsubmit = (e) => {
+                    e.preventDefault();
+                    const id = document.getElementById('edit-user-id').value;
+                    const username = document.getElementById('edit-user-username').value.trim();
+                    const exists = this.db.users.some(u => u.username === username && u.id != id);
+                    if(exists) {
+                        this.showToast('اسم المستخدم هذا مستخدم مسبقاً!', 'error');
+                        return;
+                    }
+
+                    const userData = {
+                        name: document.getElementById('edit-user-name').value.trim(),
+                        username: username,
+                        role: document.getElementById('edit-user-role').value,
+                        idNumber: document.getElementById('edit-user-id-number').value,
+                        dob: document.getElementById('edit-user-dob').value,
+                        password: btoa(document.getElementById('edit-user-pass').value)
+                    };
+
+                    if (id) {
+                        const idx = this.db.users.findIndex(u => u.id == id);
+                        if(this.db.users[idx].role === 'teacher' && this.currentUser.role === 'teacher') {
+                            userData.role = 'teacher';
+                        }
+                        this.db.users[idx] = { ...this.db.users[idx], ...userData };
+                        if (id == this.currentUser.id) this.currentUser = this.db.users[idx];
+                        this.logActivity('تعديل حساب', userData.name);
+                    } else {
+                        if(this.currentUser.role === 'teacher') return;
+                        const newUser = { id: Date.now(), ...userData, circleId: null };
+                        this.db.users.push(newUser);
+                        this.logActivity('إنشاء حساب', userData.name);
+                    }
+
+                    this.saveDB();
+                    this.closeModal('modal-edit-user');
+                    this.showToast('تم حفظ البيانات بنجاح', "success");
+                    if (this.currentUser.role !== 'teacher') this.renderAdminUsers();
+                    this.updateUserInfoUI();
+                };
+            },
+
+            renderAdminDashboard() {
+                if(this.currentUser.role === 'teacher') return;
+                this.syncCounts();
+                const area = document.getElementById('content-area');
+                const reportsToday = this.db.dailyLogs.filter(l => l.date === new Date().toISOString().split('T')[0]).length;
+                const criticalStudents = this.db.students.filter(s => this.checkAbsenteeism(s.id));
+                const pendingRequests = (this.db.testRequests || []).filter(r => r.status === 'pending');
+                let requestsHtml = '';
+                if (pendingRequests.length > 0) {
+                    requestsHtml = `
+                        <div class="mb-8 bg-white p-6 rounded-3xl border border-purple-100 shadow-sm page-animate">
+                            <h3 class="text-sm font-black text-purple-800 mb-4 flex items-center"><i class="fas fa-file-signature ml-2 text-purple-500"></i> طلبات الاختبارات المعلقة (${pendingRequests.length})</h3>
+                            <div class="space-y-3">
+                                ${pendingRequests.map(r => `
+                                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-purple-50/50 p-4 rounded-2xl border border-purple-50 gap-2">
+                                        <div>
+                                            <p class="text-sm font-black text-gray-800">${r.studentName} <span class="text-xs font-normal text-gray-400">(${r.circleName})</span></p>
+                                            <p class="text-xs font-bold text-purple-700">طلب اختبار: ${r.part} | مرسل من: ${r.requestedBy}</p>
+                                            ${r.notes ? `<p class="text-[10px] text-gray-500 mt-1">ملاحظة: ${r.notes}</p>` : ''}
+                                        </div>
+                                        <div class="flex gap-2 w-full md:w-auto justify-end">
+                                            <button onclick="App.approveTestRequest(${r.id}, ${r.studentId}, '${r.part}')" class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg font-black hover:scale-105 transition-all">قبول وتسجيل النتيجة</button>
+                                            <button onclick="App.rejectTestRequest(${r.id})" class="bg-red-50 text-red-600 text-xs px-3 py-1.5 rounded-lg font-black hover:bg-red-100 transition-all">رفض</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                area.innerHTML = `
+                    ${this.renderHonorRoll()} 
+                    
+                    <div class="mb-8 ${criticalStudents.length === 0 ? 'hidden' : ''}">
+                        <div class="bg-red-50 border border-red-100 p-4 rounded-3xl alert-pulse flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600"><i class="fas fa-exclamation-triangle"></i></div>
+                                <div>
+                                    <h4 class="text-sm font-black text-red-800">تنبيه الغياب المتكرر</h4>
+                                    <p class="text-[10px] text-red-600 font-bold">هناك ${criticalStudents.length} طلاب غائبون لأكثر من 3 أيام متتالية، يرجى المتابعة.</p>
+                                </div>
+                            </div>
+                            <button onclick="App.navigate('admin-students')" class="bg-red-600 text-white px-4 py-2 rounded-xl text-[10px] font-black">مراجعة الطلاب</button>
+                        </div>
+                    </div>
+
+                    ${requestsHtml}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        ${this.componentStatCard('إجمالي الطلاب', this.db.students.length, '+'+this.db.students.filter(s=>s.status==='نشط').length + ' نشط', 'fa-users', 'primary')}
+                        ${this.componentStatCard('الحلقات النشطة', this.db.circles.length, '+'+this.db.circles.length, 'fa-circle', 'secondary')}
+                        ${this.componentStatCard('الرصيد المتاح', this.calculateBalance().toLocaleString(), 'SAR', 'fa-wallet', 'accent')}
+                        ${this.componentStatCard('تقارير اليوم', reportsToday, 'تم استلامها', 'fa-file-signature', 'primary')}
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div class="lg:col-span-2">
+                            <div class="bg-white rounded-3xl shadow-sm p-6 border border-gray-100 h-full">
+                                <h3 class="text-lg font-black text-gray-800 mb-6 flex items-center"><i class="fas fa-chart-line ml-3 text-primary"></i> تحليل إنجاز الحلقات</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-right">
+                                        <thead>
+                                            <tr class="text-gray-400 text-[10px] uppercase font-black border-b">
+                                                <th class="pb-3">اسم الحلقة</th>
+                                                <th class="pb-3">المحفظ</th>
+                                                <th class="pb-3 text-center">الطلاب</th>
+                                                <th class="pb-3 text-center">التقرير</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-50">
+                                            ${this.db.circles.length > 0 ? this.db.circles.map(c => {
+                                                const hasReport = this.db.dailyLogs.some(l => {
+                                                    const s = this.db.students.find(st => st.id == l.studentId);
+                                                    return s && s.circleId == c.id && l.date == new Date().toISOString().split('T')[0];
+                                                });
+                                                return `
+                                                <tr class="hover:bg-gray-50 transition-all">
+                                                    <td class="py-4 font-bold text-sm text-gray-700">${c.name}</td>
+                                                    <td class="py-4 text-xs font-bold text-gray-500">${c.teacher}</td>
+                                                    <td class="py-4 text-xs font-black text-primary text-center">${c.studentsCount}</td>
+                                                    <td class="py-4 text-center">
+                                                        <span class="text-[9px] px-2 py-1 rounded-full font-black ${hasReport ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                                                            ${hasReport ? 'مكتمل' : 'معلق'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            `}).join('') : '<tr><td colspan="4" class="text-center py-4 text-gray-400 text-xs">لا يوجد بيانات</td></tr>'}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-6">
+                            <div class="bg-white rounded-3xl shadow-sm p-6 border border-gray-100 h-[280px]">
+                                <h3 class="text-sm font-black text-gray-400 mb-6 tracking-widest uppercase">توزيع المستويات</h3>
+                                <div class="relative h-40">
+                                    <canvas id="attendance-chart-mini"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-dark text-white rounded-3xl shadow-sm p-6 h-[250px] overflow-hidden flex flex-col">
+                                <h3 class="text-xs font-black text-blue-300 mb-4 uppercase tracking-widest">آخر نشاطات النظام</h3>
+                                <div class="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                                    ${this.db.activityLogs && this.db.activityLogs.length > 0 ? 
+                                        this.db.activityLogs.slice(-10).reverse().map(log => `
+                                            <div class="activity-item bg-white/5 border-r-blue-400 mb-2">
+                                                <p class="font-black text-[10px] text-blue-200">${log.user}</p>
+                                                <p class="text-[9px] opacity-80">${log.action}: ${log.details}</p>
+                                            </div>
+                                        `).join('') : '<p class="text-[10px] opacity-50 text-center py-10">لا يوجد نشاطات مسجلة</p>'
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                setTimeout(() => this.initChart(), 50);
+            },
+
+            calculateBalance() {
+                const f = this.db.finance || initialData.finance;
+                const totalIncome = (f.transactions || []).filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                const totalExpense = (f.transactions || []).filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                return (parseFloat(f.budget) || 0) + totalIncome - totalExpense;
+            },
+
+            componentStatCard(title, val, change, icon, color) {
+                const colorClass = { primary: 'bg-primary text-white', secondary: 'bg-secondary text-white', accent: 'bg-accent text-white' }[color];
+                return `
+                    <div class="stat-card bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <p class="text-[10px] uppercase font-black text-gray-400 mb-1 tracking-widest">${title}</p>
+                                <p class="text-2xl font-black text-gray-800">${val}</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl ${colorClass} flex items-center justify-center shadow-lg shadow-black/5">
+                                <i class="fas ${icon} text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-auto flex items-center text-[10px] font-black text-green-500 bg-green-50 w-fit px-2 py-1 rounded-lg">
+                              ${change}
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderAdminStudents(filter = '', circleFilter = '') {
+                if(this.currentUser.role === 'teacher') return;
+                const area = document.getElementById('content-area');
+                const searchTerm = filter.toLowerCase();
+                let filteredStudents = this.db.students.filter(s => 
+                    (s.name || '').toLowerCase().includes(searchTerm) || (s.phone || '').includes(searchTerm)
+                );
+                
+                if (circleFilter) {
+                    filteredStudents = filteredStudents.filter(s => s.circleId == circleFilter);
+                }
+                
+                area.innerHTML = `
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b flex flex-col md:flex-row justify-between items-center bg-gray-50/50 gap-4">
+                            <h3 class="font-black text-gray-800">إدارة الطلاب (${filteredStudents.length})</h3>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <select id="student-circle-filter" onchange="App.renderAdminStudents(document.getElementById('student-search-input').value, this.value)" class="bg-white border rounded-xl px-3 py-2 text-xs font-bold outline-none border-gray-200">
+                                    <option value="">كل الحلقات</option>
+                                    ${this.db.circles.map(c => `<option value="${c.id}" ${circleFilter == c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+                                </select>
+                                <div class="relative w-64">
+                                    <input type="text" id="student-search-input" value="${filter}" placeholder="بحث باسم الطالب أو الهاتف..." class="w-full bg-white border rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-primary border-gray-200">
+                                </div>
+                                <button onclick="App.exportStudentsCSV()" class="bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200" title="تصدير Excel"><i class="fas fa-file-excel"></i></button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right">
+                                <thead class="bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                                    <tr>
+                                        <th class="p-4">الاسم</th>
+                                        <th class="p-4">الحلقة</th>
+                                        <th class="p-4 w-48">التقدم (الأجزاء)</th>
+                                        <th class="p-4">النقاط</th> 
+                                        <th class="p-4">الحالة</th>
+                                        <th class="p-4">الإجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50">
+                                    ${filteredStudents.length > 0 ? filteredStudents.map(s => {
+                                        const isAbsent = this.checkAbsenteeism(s.id);
+                                        return `
+                                        <tr class="hover:bg-blue-50/20 transition-all group ${isAbsent ? 'absent-row' : ''}">
+                                            <td class="p-4">
+                                                <p class="font-bold text-sm text-gray-800">
+                                                    ${s.name}
+                                                    ${isAbsent ? '<i class="fas fa-exclamation-triangle text-red-500 text-[10px] mr-1" title="تنبيه: غياب متكرر (3+ أيام)"></i>' : ''}
+                                                </p>
+                                                <p class="text-[9px] text-gray-400">هاتف: ${s.phone || '---'}</p>
+                                            </td>
+                                            <td class="p-4 text-xs font-bold text-gray-500">${this.db.circles.find(c => c.id == s.circleId)?.name || '<span class="text-red-400 text-[10px]">غير موزع</span>'}</td>
+                                            <td class="p-4">
+                                                <div class="flex items-center space-x-2 space-x-reverse">
+                                                    <div class="flex-1 progress-bar"><div class="progress-fill" style="width: ${((s.juzCount || 0)/30)*100}%"></div></div>
+                                                    <span class="text-[10px] font-black">${s.juzCount || 0}/30</span>
+                                                </div>
+                                            </td>
+                                            <td class="p-4 text-xs font-black text-orange-500"><i class="fas fa-star ml-1"></i>${s.points || 0}</td>
+                                            <td class="p-4 text-xs font-black">
+                                                <span class="px-2 py-1 rounded-lg ${s.status === 'نشط' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'} text-[10px]">${s.status || 'نشط'}</span>
+                                            </td>
+                                            <td class="p-4 flex items-center space-x-3 space-x-reverse">
+                                                <button onclick="App.openAddTestModal(${s.id})" class="text-orange-500 hover:scale-110 transition-all" title="تسجيل اختبار"><i class="fas fa-medal"></i></button>
+                                                <button onclick="App.viewStudentHistory(${s.id})" class="text-green-500 hover:scale-110 transition-all" title="سجل المتابعة"><i class="fas fa-history"></i></button>
+                                                <button onclick="App.printStudentCertificate(${s.id})" class="text-purple-500 hover:scale-110 transition-all" title="شهادة إنجاز"><i class="fas fa-award"></i></button>
+                                                <button onclick="App.openEditStudentModal(${s.id})" class="text-blue-400 hover:text-blue-600"><i class="fas fa-edit"></i></button>
+                                                <button onclick="App.deleteStudent(${s.id})" class="text-red-400 hover:text-red-600"><i class="fas fa-user-minus"></i></button>
+                                            </td>
+                                        </tr>
+                                    `}).join('') : '<tr><td colspan="6" class="text-center py-10 text-gray-400 font-bold">لا يوجد نتائج للبحث</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                
+                const searchInput = document.getElementById('student-search-input');
+                if(searchInput) {
+                    searchInput.focus();
+                    searchInput.addEventListener('input', (e) => {
+                        this.renderAdminStudents(e.target.value, document.getElementById('student-circle-filter').value);
+                    });
+                }
+            },
+
+            openEditStudentModal(id) {
+                const s = this.db.students.find(x => x.id == id);
+                if(s) {
+                    if(this.currentUser.role === 'teacher') {
+                        this.showToast("لا تملك صلاحية التعديل المباشر، استخدم التقرير اليومي", "error");
+                        return;
+                    }
+                    document.getElementById('edit-student-id').value = s.id;
+                    document.getElementById('student-name').value = s.name;
+                    document.getElementById('student-phone').value = s.phone;
+                    document.getElementById('student-juz').value = s.juzCount || 0;
+                    document.getElementById('student-status').value = s.status || 'نشط';
+                    document.getElementById('points-container').classList.remove('hidden');
+                    document.getElementById('student-points').value = s.points || 0;
+                    document.getElementById('student-modal-title').textContent = 'تعديل بيانات الطالب';
+                    this.openModal('modal-add-student');
+                    document.getElementById('modal-circle-select').value = s.circleId || '';
+                }
+            },
+
+            deleteStudent(id) {
+                if(this.currentUser.role === 'teacher') return;
+                if(confirm('هل أنت متأكد من حذف هذا الطالب نهائياً؟')) {
+                    this.db.students = this.db.students.filter(s => s.id !== id);
+                    this.logActivity('حذف طالب', `ID: ${id}`);
+                    this.saveDB();
+                    this.renderAdminStudents();
+                    this.showToast("تم حذف الطالب", "success");
+                }
+            },
+
+            exportStudentsCSV() {
+                if(this.currentUser.role === 'teacher') return;
+                let csv = "الاسم,الحلقة,الهاتف,تاريخ الانضمام,عدد الأجزاء,النقاط\n";
+                this.db.students.forEach(s => {
+                    const cName = this.db.circles.find(c => c.id == s.circleId)?.name || 'غير موزع';
+                    csv += `${s.name},${cName},${s.phone},${s.joinDate},${s.juzCount},${s.points || 0}\n`;
+                });
+                const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute("download", "students_list_" + new Date().getTime() + ".csv");
+                link.click();
+                this.logActivity('تصدير بيانات', 'قائمة الطلاب CSV');
+            },
+
+            // دالة تحديث التقرير اليومي مع حساب الصفحات فوري
+            updateRowPageCalc(studentId) {
+                const surahHifz = document.querySelector(`.log-hifz-surah[data-id="${studentId}"]`).value;
+                const ayahHifz = document.querySelector(`.log-hifz-ayah[data-id="${studentId}"]`).value;
+                const surahMur = document.querySelector(`.log-murajaa-surah[data-id="${studentId}"]`).value;
+                const ayahMur = document.querySelector(`.log-murajaa-ayah[data-id="${studentId}"]`).value;
+
+                const hifzPages = this.calculatePages(surahHifz, ayahHifz);
+                const murPages = this.calculatePages(surahMur, ayahMur);
+
+                document.getElementById(`hifz-page-badge-${studentId}`).textContent = hifzPages > 0 ? `${hifzPages} صفحة` : '';
+                document.getElementById(`mur-page-badge-${studentId}`).textContent = murPages > 0 ? `${murPages} صفحة` : '';
+            },
+
+            renderTeacherDaily() {
+                const circleId = this.currentUser.circleId;
+                const students = this.db.students.filter(s => s.circleId == circleId && s.status === 'نشط');
+                const activeDate = this.currentReportDate;
+                const area = document.getElementById('content-area');
+                const surahOptions = QURAN_SURAHS.map(s => `<option value="${s}">${s}</option>`).join('');
+
+                area.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 no-print">
+                        <div class="bg-primary text-white p-6 rounded-3xl shadow-lg">
+                            <p class="text-xs opacity-70 font-bold mb-1">طلاب الحلقة (النشطين)</p>
+                            <h4 class="text-3xl font-black">${students.length}</h4>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-gray-100">
+                            <p class="text-xs text-gray-400 font-bold mb-1">تاريخ التقرير</p>
+                            <input type="date" value="${activeDate}" onchange="App.renderTeacherDailyAtDate(this.value)" class="text-lg font-black text-gray-800 border-none outline-none bg-transparent w-full">
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-gray-100">
+                            <button onclick="App.markAllPresent()" class="w-full h-full flex flex-col items-center justify-center space-y-1 hover:text-primary transition-all">
+                                <i class="fas fa-check-double text-2xl text-secondary"></i>
+                                <span class="text-xs font-black">تحضير الجميع (حاضر)</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden page-animate">
+                        <div class="p-6 border-b flex flex-col md:flex-row justify-between items-center bg-gray-50/50 gap-4">
+                            <div><h3 class="font-black text-gray-800">رصد الإنجاز اليومي - <span class="text-primary">${activeDate}</span></h3></div>
+                            <div class="flex space-x-2 space-x-reverse">
+                                <button onclick="window.print()" class="no-print bg-white border border-gray-100 text-gray-600 px-4 py-2 rounded-xl text-xs font-black hover:bg-gray-100">طباعة</button>
+                                <button onclick="App.saveDailyLogs()" class="bg-secondary text-white px-8 py-3 rounded-2xl font-black shadow-xl hover:scale-105 transition-all">حفظ التقارير</button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right">
+                                <thead class="bg-gray-100 text-[10px] font-black text-gray-400 uppercase">
+                                    <tr>
+                                        <th class="p-4 w-40">اسم الطالب</th>
+                                        <th class="p-4 text-center">الحضور</th>
+                                        <th class="p-4 text-center">الحفظ اليومي</th>
+                                        <th class="p-4 text-center">المراجعة</th>
+                                        <th class="p-4 text-center">التقييم</th>
+                                        <th class="p-4 text-center no-print">واتساب</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50" id="teacher-log-tbody">
+                                    ${students.length > 0 ? students.map(s => {
+                                        const log = (this.db.dailyLogs || []).find(l => l.studentId == s.id && l.date == activeDate) || {};
+                                        return `
+                                            <tr class="hover:bg-blue-50/10 transition-all">
+                                                <td class="p-4">
+                                                    <p class="font-black text-[12px] text-gray-700 leading-tight">${s.name}</p>
+                                                    <p class="text-[9px] text-gray-400">الرصيد: ${s.points || 0}</p>
+                                                </td>
+                                                <td class="p-4">
+                                                    <select class="daily-input font-bold log-attendance" data-id="${s.id}" >
+                                                        <option value="حاضر" ${log.attendance === 'حاضر' ? 'selected' : ''}>حاضر</option>
+                                                        <option value="غائب" ${log.attendance === 'غائب' ? 'selected' : ''}>غائب</option>
+                                                        <option value="مجاز" ${log.attendance === 'مجاز' ? 'selected' : ''}>مجاز</option>
+                                                    </select>
+                                                </td>
+                                                <td class="p-4 min-w-[150px]">
+                                                    <div class="flex flex-col gap-1">
+                                                        <select onchange="App.updateRowPageCalc(${s.id})" class="surah-select log-hifz-surah" data-id="${s.id}">
+                                                            <option value="">اختر السورة</option>
+                                                            ${surahOptions}
+                                                        </select>
+                                                        <input type="text" oninput="App.updateRowPageCalc(${s.id})" placeholder="الآيات (مثلاً 1-10)" class="daily-input log-hifz-ayah" data-id="${s.id}" value="${log.hifzAyah || ''}">
+                                                        <span id="hifz-page-badge-${s.id}" class="page-calc-badge">${log.hifzPages ? log.hifzPages + ' صفحة' : ''}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="p-4 min-w-[150px]">
+                                                     <div class="flex flex-col gap-1">
+                                                        <select onchange="App.updateRowPageCalc(${s.id})" class="surah-select log-murajaa-surah" data-id="${s.id}">
+                                                            <option value="">اختر السورة</option>
+                                                            ${surahOptions}
+                                                        </select>
+                                                        <input type="text" oninput="App.updateRowPageCalc(${s.id})" placeholder="الآيات (مثلاً 1-20)" class="daily-input log-murajaa-ayah" data-id="${s.id}" value="${log.murajaaAyah || ''}">
+                                                        <span id="mur-page-badge-${s.id}" class="page-calc-badge">${log.murajaaPages ? log.murajaaPages + ' صفحة' : ''}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="p-4"><input type="text" placeholder="ممتاز" class="daily-input log-exam" data-id="${s.id}" value="${log.exam || ''}"></td>
+                                                <td class="p-4 text-center no-print">
+                                                  <button onclick="App.sendWhatsApp(${s.id})" class="text-green-500 hover:scale-110 transition-all"><i class="fab fa-whatsapp text-lg"></i></button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('') : '<tr><td colspan="6" class="text-center py-10 text-gray-400">لا يوجد طلاب نشطين في حلقتك حالياً</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                
+                students.forEach(s => {
+                    const log = (this.db.dailyLogs || []).find(l => l.studentId == s.id && l.date == activeDate) || {};
+                    if(log.hifzSurah) {
+                        const hSelect = document.querySelector(`.log-hifz-surah[data-id="${s.id}"]`);
+                        if(hSelect) hSelect.value = log.hifzSurah;
+                    }
+                    if(log.murajaaSurah) {
+                        const mSelect = document.querySelector(`.log-murajaa-surah[data-id="${s.id}"]`);
+                        if(mSelect) mSelect.value = log.murajaaSurah;
+                    }
+                });
+            },
+
+            markAllPresent() {
+                document.querySelectorAll('.log-attendance').forEach(select => select.value = 'حاضر');
+                this.showToast("تم تحديد الجميع كـ حاضر");
+            },
+
+            renderTeacherDailyAtDate(date) {
+                this.currentReportDate = date;
+                this.renderTeacherDaily();
+            },
+
+            saveDailyLogs() {
+                const activeDate = this.currentReportDate;
+                const rows = document.querySelectorAll('#teacher-log-tbody tr');
+                if(rows.length === 0) return this.showToast("لا يوجد بيانات لحفظها", "error");
+                
+                rows.forEach(row => {
+                    const attEl = row.querySelector('.log-attendance');
+                    if(!attEl) return;
+                    const studentId = parseInt(attEl.dataset.id);
+                    const hSurah = row.querySelector('.log-hifz-surah').value;
+                    const hAyah = row.querySelector('.log-hifz-ayah').value;
+                    const mSurah = row.querySelector('.log-murajaa-surah').value;
+                    const mAyah = row.querySelector('.log-murajaa-ayah').value;
+
+                    const hPages = this.calculatePages(hSurah, hAyah);
+                    const mPages = this.calculatePages(mSurah, mAyah);
+
+                    const logData = {
+                        studentId, date: activeDate,
+                        attendance: attEl.value,
+                        hifzSurah: hSurah,
+                        hifzAyah: hAyah,
+                        hifzPages: hPages,
+                        murajaaSurah: mSurah,
+                        murajaaAyah: mAyah,
+                        murajaaPages: mPages,
+                        hifz: hSurah ? `${hSurah} (${hAyah}) - ${hPages} ص` : hAyah,
+                        murajaa: mSurah ? `${mSurah} (${mAyah}) - ${mPages} ص` : mAyah,
+                        exam: row.querySelector('.log-exam').value,
+                        month: new Date(activeDate).getMonth() + 1,
+                        year: new Date(activeDate).getFullYear()
+                    };
+                    
+                    const idx = this.db.dailyLogs.findIndex(l => l.studentId === studentId && l.date === activeDate);
+                    
+                    if (idx === -1) {
+                        const sIdx = this.db.students.findIndex(s => s.id == studentId);
+                        if(sIdx > -1 && logData.attendance === 'حاضر') {
+                           this.db.students[sIdx].points = (this.db.students[sIdx].points || 0) + (this.db.settings.pointReward || 5);
+                        }
+                        this.db.dailyLogs.push(logData);
+                    } else {
+                        this.db.dailyLogs[idx] = logData;
+                    }
+                });
+                
+                this.logActivity('حفظ تقرير يومي', activeDate);
+                this.saveDB();
+                this.showToast('تم حفظ التقارير وحساب الصفحات بنجاح', 'success');
+            },
+
+            renderTeacherStudents() {
+                const circleId = this.currentUser.circleId;
+                const students = this.db.students.filter(s => s.circleId == circleId);
+                const area = document.getElementById('content-area');
+                area.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${students.length > 0 ? students.map(s => `
+                            <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:border-primary transition-all">
+                                <div class="flex items-center space-x-4 space-x-reverse mb-4">
+                                    <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-primary font-black text-xl">${s.name[0]}</div>
+                                    <div class="flex-1">
+                                        <h4 class="font-black text-gray-800">${s.name}</h4>
+                                        <p class="text-[10px] font-bold text-gray-400">انضم في: ${s.joinDate || '---'}</p>
+                                    </div>
+                                    <div class="text-orange-500 font-black text-sm"><i class="fas fa-star mr-1"></i>${s.points || 0}</div>
+                                </div>
+                                <div class="space-y-3">
+                                    <div>
+                                        <div class="flex justify-between text-[10px] mb-1"><span class="text-gray-400">حفظ القرآن:</span><span class="font-black text-primary">${s.juzCount || 0} جزء</span></div>
+                                        <div class="progress-bar"><div class="progress-fill" style="width: ${((s.juzCount || 0)/30)*100}%"></div></div>
+                                    </div>
+                                    <div class="flex justify-between text-xs pt-2 border-t border-gray-50"><span class="text-gray-400">رقم التواصل:</span><span class="font-bold">${s.phone || '---'}</span></div>
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">حالة الطالب:</span><span class="font-bold ${s.status === 'نشط' ? 'text-green-600' : 'text-red-500'}">${s.status || 'نشط'}</span></div>
+                                    
+                                    <div class="grid grid-cols-3 gap-1 mt-4">
+                                        <button onclick="App.viewStudentHistory(${s.id})" class="py-2 bg-gray-50 rounded-xl text-[9px] font-black text-gray-500 hover:bg-primary hover:text-white transition-all text-center">سجل المتابعة</button>
+                                        <button onclick="App.printStudentCertificate(${s.id})" class="py-2 bg-orange-50 rounded-xl text-[9px] font-black text-orange-600 hover:bg-orange-500 hover:text-white transition-all text-center">شهادة إنجاز</button>
+                                        <button onclick="App.openRequestTestModal(${s.id})" class="py-2 bg-purple-50 rounded-xl text-[9px] font-black text-purple-600 hover:bg-purple-500 hover:text-white transition-all text-center">طلب اختبار</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('') : '<p class="text-gray-400 text-center col-span-full py-10 font-bold">لا يوجد طلاب مسجلين في حلقتك</p>'}
+                    </div>
+                `;
+            },
+
+            renderUserProfile() {
+                this.openEditUserModal(this.currentUser.id);
+                const area = document.getElementById('content-area');
+                const changePassSection = `
+                    <div class="mt-8 p-6 bg-orange-50 rounded-3xl border border-orange-100">
+                        <h4 class="font-black text-orange-800 mb-2">الأمان والحماية</h4>
+                        <p class="text-xs text-orange-600 mb-4">يمكنك تحديث كلمة المرور الخاصة بك من هنا بشكل مباشر.</p>
+                        <button onclick="App.openChangePasswordModal()" class="bg-orange-500 text-white px-6 py-2 rounded-xl text-xs font-black shadow-lg hover:bg-orange-600 transition-all">تغيير كلمة المرور</button>
+                    </div>
+                `;
+                area.innerHTML += changePassSection;
+            },
+
+            renderAdminFinance() {
+                if(this.currentUser.role === 'teacher') return;
+                const f = this.db.finance || { budget: 0, transactions: [] };
+                const totalIncome = (f.transactions || []).filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                const totalExpense = (f.transactions || []).filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                const balance = (parseFloat(f.budget) || 0) + totalIncome - totalExpense;
+
+                const area = document.getElementById('content-area');
+                area.innerHTML = `
+                    <div class="bg-blue-600 text-white p-8 rounded-3xl mb-8 flex flex-col md:flex-row justify-between items-center shadow-xl">
+                        <div>
+                            <p class="text-sm opacity-80 font-bold mb-2">إجمالي ميزانية المركز</p>
+                            <h2 class="text-4xl font-black">${balance.toLocaleString()} شيكل</h2>
+                            <div class="flex gap-2 mt-4">
+                                <button onclick="App.printFinanceReport()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all"><i class="fas fa-print ml-2"></i> كشف حساب</button>
+                                <button onclick="App.renderPayrollSection()" class="bg-white text-blue-600 px-4 py-2 rounded-xl text-xs font-bold transition-all"><i class="fas fa-hand-holding-usd ml-2"></i> عرض الرواتب المقدرة</button>
+                            </div>
+                        </div>
+                        <div class="mt-4 md:mt-0 bg-white/10 p-4 rounded-2xl">
+                             <p class="text-[10px] font-black uppercase mb-1 opacity-70">إعدادات الرواتب (لكل طالب)</p>
+                             <div class="flex gap-2">
+                                <input type="number" id="salary-per-student" value="${this.db.settings.salaryPerStudent}" class="bg-white/20 border-none rounded-lg p-2 text-white font-bold outline-none w-20">
+                                <button onclick="App.updateFinanceSettings()" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-black text-xs">حفظ</button>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div id="payroll-area" class="mb-8 hidden"></div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm border-r-4 border-r-green-500">
+                            <p class="text-[10px] font-black text-gray-400 uppercase mb-2">إجمالي الإيرادات</p>
+                            <h4 class="text-2xl font-black text-green-600">+ ${totalIncome.toLocaleString()} شيكل</h4>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm border-r-4 border-r-red-500">
+                            <p class="text-[10px] font-black text-gray-400 uppercase mb-2">إجمالي المصروفات</p>
+                            <h4 class="text-2xl font-black text-red-600">- ${totalExpense.toLocaleString()} شيكل</h4>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-1 bg-white p-6 rounded-3xl border border-gray-100">
+                            <h3 class="font-black mb-4">إضافة حركة مالية</h3>
+                            <form id="finance-form" class="space-y-4">
+                                <input type="text" id="fin-desc" placeholder="وصف الحركة" required class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none font-bold text-sm">
+                                <input type="number" id="fin-amount" placeholder="المبلغ" required class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none font-bold text-sm">
+                                <select id="fin-category" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none font-bold text-sm">
+                                    <option value="عام">عام</option>
+                                    <option value="رواتب">رواتب</option>
+                                    <option value="فواتير">فواتير</option>
+                                    <option value="تبرعات">تبرعات</option>
+                                    <option value="مكافآت">مكافآت طلاب</option>
+                                </select>
+                                <select id="fin-type" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none font-bold text-sm">
+                                    <option value="expense">مصروفات (-)</option>
+                                    <option value="income">إيرادات (+)</option>
+                                </select>
+                                <button type="submit" class="w-full bg-dark text-white py-3 rounded-xl font-black">تسجيل العملية</button>
+                            </form>
+                        </div>
+                        <div class="lg:col-span-2 bg-white rounded-3xl border border-gray-100 overflow-hidden">
+                            <div class="p-6 border-b bg-gray-50/50"><h3 class="font-black">آخر العمليات المالية</h3></div>
+                            <div class="max-h-96 overflow-y-auto">
+                                <table class="w-full text-right text-sm">
+                                    <thead class="bg-gray-50 sticky top-0">
+                                        <tr><th class="p-4">البيان</th><th class="p-4">الفئة</th><th class="p-4 text-center">المبلغ</th><th class="p-4 text-center">الإجراء</th></tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-50">
+                                        ${(f.transactions || []).length > 0 ? f.transactions.slice().reverse().map(t => `
+                                            <tr>
+                                                <td class="p-4 font-bold text-gray-700">
+                                                    ${t.desc}
+                                                    <p class="text-[9px] text-gray-400">${new Date(t.date).toLocaleDateString('ar-SA')}</p>
+                                                </td>
+                                                <td class="p-4"><span class="text-[10px] font-black px-2 py-1 rounded-lg ${t.type === 'income' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}">${t.category || 'عام'}</span></td>
+                                                <td class="p-4 font-black text-center">${parseFloat(t.amount).toLocaleString()} شيكل</td>
+                                                <td class="p-4 text-center"><button onclick="App.deleteTransaction(${t.id})" class="text-gray-300 hover:text-red-500"><i class="fas fa-trash-alt"></i></button></td>
+                                            </tr>
+                                        `).join('') : '<tr><td colspan="4" class="text-center py-10 text-gray-400 font-bold">لا يوجد عمليات مسجلة</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                const finForm = document.getElementById('finance-form');
+                if(finForm) {
+                    finForm.onsubmit = (e) => {
+                        e.preventDefault();
+                        const amount = parseFloat(document.getElementById('fin-amount').value);
+                        if(amount <= 0 || isNaN(amount)) return alert('المبلغ يجب أن يكون أكبر من صفر');
+                        
+                        const transaction = {
+                            id: Date.now(),
+                            desc: document.getElementById('fin-desc').value.trim(),
+                            amount: amount,
+                            type: document.getElementById('fin-type').value,
+                            category: document.getElementById('fin-category').value,
+                            date: new Date().toISOString()
+                        };
+                        this.db.finance.transactions.push(transaction);
+                        this.logActivity('عملية مالية', `${transaction.desc} (${amount})`);
+                        this.saveDB();
+                        this.renderAdminFinance();
+                        this.showToast("تم تسجيل العملية المالية", "success");
+                    };
+                }
+            },
+
+            renderPayrollSection() {
+                if(this.currentUser.role === 'teacher') return;
+                const payrollArea = document.getElementById('payroll-area');
+                payrollArea.classList.remove('hidden');
+                const rate = this.db.settings.salaryPerStudent || 50;
+                
+                payrollArea.innerHTML = `
+                    <div class="bg-white p-6 rounded-3xl border-2 border-blue-100 page-animate">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-black text-blue-800"><i class="fas fa-calculator ml-2"></i> الرواتب المقدرة للمحفظين (بناءً على الطلاب النشطين)</h3>
+                            <button onclick="document.getElementById('payroll-area').classList.add('hidden')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times-circle"></i></button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${this.db.users.filter(u => u.role === 'teacher').map(teacher => {
+                                const studentCount = this.db.students.filter(s => s.circleId == teacher.circleId && s.status === 'نشط').length;
+                                const salary = studentCount * rate;
+                                return `
+                                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                                        <p class="text-xs font-black text-gray-400 uppercase">${teacher.name}</p>
+                                        <p class="text-[10px] mb-2">${studentCount} طالب نشط × ${rate} شيكل</p>
+                                        <p class="text-lg font-black text-primary">${salary.toLocaleString()} شيكل</p>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            },
+
+            updateFinanceSettings() {
+                if(this.currentUser.role === 'teacher') return;
+                const rate = document.getElementById('salary-per-student').value;
+                this.db.settings.salaryPerStudent = parseInt(rate);
+                this.saveDB();
+                this.showToast("تم تحديث إعدادات الرواتب");
+                this.renderAdminFinance();
             },
 
             updateClock() {
                 const now = new Date();
                 const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                 const el = document.getElementById('current-full-date');
-                if(el) el.innerText = now.toLocaleDateString('ar-EG', options);
+                if(el) el.textContent = now.toLocaleDateString('ar-SA', options);
+                const printDate = document.getElementById('print-date-display');
+                if(printDate) printDate.textContent = now.toLocaleString('ar-SA');
+                setTimeout(() => this.updateClock(), 60000);
             },
 
-            syncCounts() {
-                if (this.db.circles && this.db.students) {
-                    this.db.circles.forEach(c => {
-                        c.studentsCount = this.db.students.filter(s => s.circleId == c.id && s.status === 'نشط').length;
-                    });
+            openModal(id) { 
+                const modal = document.getElementById(id);
+                if(!modal) return;
+                modal.classList.remove('hidden'); 
+                modal.classList.add('flex'); 
+                if(id === 'modal-add-student') {
+                    document.getElementById('modal-circle-select').innerHTML = `<option value="">غير موزع</option>` + (this.db.circles || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
                 }
             },
 
-            showToast(msg, type = 'success') {
-                const toast = document.getElementById('toast');
-                const toastMsg = document.getElementById('toast-msg');
-                const toastIcon = document.getElementById('toast-icon');
-                if (!toast) return;
-                toastMsg.innerText = msg;
-                toastIcon.className = type === 'danger' ? "fas fa-exclamation-circle text-red-500" : "fas fa-check-circle text-green-500";
-                toast.style.display = 'block';
-                setTimeout(() => { toast.style.display = 'none'; }, 3000);
+            closeModal(id) { 
+                const modal = document.getElementById(id);
+                if(!modal) return;
+                modal.classList.add('hidden'); 
+                modal.classList.remove('flex'); 
+                if(id === 'modal-add-student') document.getElementById('points-container').classList.add('hidden');
             },
 
-            openModal(modalId) {
-                const modal = document.getElementById(modalId);
-                if (modal) {
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
-                    if (modalId === 'modal-add-student' || modalId === 'modal-edit-student') {
-                        const selectId = modalId === 'modal-add-student' ? 'modal-circle-select' : 'edit-student-circle';
-                        const select = document.getElementById(selectId);
-                        if (select && this.db.circles) {
-                            select.innerHTML = this.db.circles.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                        }
-                    }
-                }
-            },
-
-            closeModal(modalId) {
-                const modal = document.getElementById(modalId);
-                if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
-            },
-
-            renderAdminNav() {
-                const nav = document.getElementById('nav-admin-main');
-                const menuItems = [
-                    { page: 'dashboard', label: 'لوحة التحكم', icon: 'fa-chart-pie' },
-                    { page: 'circles-mgmt', label: 'إدارة الحلقات', icon: 'fa-layer-group' },
-                    { page: 'students-mgmt', label: 'إدارة الطلاب', icon: 'fa-user-graduate' },
-                    { page: 'users-mgmt', label: 'المعلمين والمشرفين', icon: 'fa-users-cog' },
-                    { page: 'tests-review', label: 'طلبات الاختبارات', icon: 'fa-file-signature' },
-                    { page: 'finance-mgmt', label: 'المالية والموازنة', icon: 'fa-wallet' }
-                ];
-                nav.innerHTML = menuItems.map(item => `
-                    <li>
-                        <button onclick="App.navigateTo('${item.page}')" class="sidebar-link w-full text-right px-4 py-3 text-sm font-bold rounded-xl flex items-center space-x-3 space-x-reverse text-gray-600 hover:bg-gray-50 transition-all">
-                            <i class="fas ${item.icon} text-gray-400 w-5"></i><span>${item.label}</span>
-                        </button>
-                    </li>
-                `).join('');
-            },
-
-            renderTeacherNav() {
-                const nav = document.getElementById('nav-teacher-main');
-                const menuItems = [
-                    { page: 'my-circle', label: 'حلقـتي الحالية', icon: 'fa-circle-dot' },
-                    { page: 'daily-report', label: 'التقرير اليومي الحسابي', icon: 'fa-calendar-check' },
-                    { page: 'my-tests', label: 'سجل اختبارات الطلاب', icon: 'fa-award' }
-                ];
-                nav.innerHTML = menuItems.map(item => `
-                    <li>
-                        <button onclick="App.navigateTo('${item.page}')" class="sidebar-link w-full text-right px-4 py-3 text-sm font-bold rounded-xl flex items-center space-x-3 space-x-reverse text-gray-600 hover:bg-gray-50 transition-all">
-                            <i class="fas ${item.icon} text-gray-400 w-5"></i><span>${item.label}</span>
-                        </button>
-                    </li>
-                `).join('');
-            },
-
-            navigateTo(page) {
-                document.querySelectorAll('.sidebar-link').forEach(btn => {
-                    if (btn.getAttribute('onclick').includes(`'${page}'`)) btn.classList.add('active');
-                    else btn.classList.remove('active');
-                });
-
-                const titles = {
-                    'dashboard': 'لوحة التحكم العامة', 'circles-mgmt': 'إدارة الحلقات القرآنية',
-                    'students-mgmt': 'سجل الطلاب الشامل', 'users-mgmt': 'إدارة الكادر البشري',
-                    'tests-review': 'مراجعة طلبات السور والأجزاء', 'finance-mgmt': 'الصندوق والتقرير المالي',
-                    'my-circle': 'بيانات حلقتي', 'daily-report': 'رصد الحفظ والمراجعة اليومية', 'my-tests': 'نتائج اختبارات الأجزاء'
-                };
-                document.getElementById('page-title').innerText = titles[page] || 'لوحة التحكم';
-                this.renderPageContent(page);
-            },
-
-            renderPageContent(page) {
-                const container = document.getElementById('content-area');
-                if (!container) return;
-
-                if (page === 'dashboard') {
-                    const totalStudents = this.db.students ? this.db.students.length : 0;
-                    const totalCircles = this.db.circles ? this.db.circles.length : 0;
-                    const totalJuz = this.db.students ? this.db.students.reduce((acc, curr) => acc + (parseInt(curr.juzCount) || 0), 0) : 0;
-                    
-                    container.innerHTML = `
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                            <div class="bg-white p-6 rounded-3xl shadow-sm stat-card">
-                                <div class="flex justify-between items-center">
-                                    <div><p class="text-xs font-black text-gray-400 uppercase">إجمالي الطلاب</p><h3 class="text-3xl font-black mt-2 text-primary">${totalStudents}</h3></div>
-                                    <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-primary"><i class="fas fa-user-graduate text-xl"></i></div>
-                                </div>
-                            </div>
-                            <div class="bg-white p-6 rounded-3xl shadow-sm stat-card">
-                                <div class="flex justify-between items-center">
-                                    <div><p class="text-xs font-black text-gray-400 uppercase">الحلقات النشطة</p><h3 class="text-3xl font-black mt-2 text-secondary">${totalCircles}</h3></div>
-                                    <div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-secondary"><i class="fas fa-layer-group text-xl"></i></div>
-                                </div>
-                            </div>
-                            <div class="bg-white p-6 rounded-3xl shadow-sm stat-card">
-                                <div class="flex justify-between items-center">
-                                    <div><p class="text-xs font-black text-gray-400 uppercase">الأجزاء المحفوظة</p><h3 class="text-3xl font-black mt-2 text-accent">${totalJuz}</h3></div>
-                                    <div class="w-12 h-12 bg-yellow-50 rounded-2xl flex items-center justify-center text-accent"><i class="fas fa-book-open text-xl"></i></div>
-                                </div>
-                            </div>
-                            <div class="bg-white p-6 rounded-3xl shadow-sm stat-card">
-                                <div class="flex justify-between items-center">
-                                    <div><p class="text-xs font-black text-gray-400 uppercase">الموازنة المتوفرة</p><h3 class="text-3xl font-black mt-2 text-gray-800">${this.db.finance ? this.db.finance.budget : 0} ₪</h3></div>
-                                    <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-600"><i class="fas fa-wallet text-xl"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-6 rounded-3xl shadow-sm">
-                            <h3 class="font-black text-md mb-4 text-gray-700">مخطط تقدم المركز البياني</h3>
-                            <canvas id="dashboardChart" class="w-full h-64"></canvas>
-                        </div>
-                    `;
-                    this.initDashboardChart();
-                } 
-                else if (page === 'circles-mgmt') {
-                    let rows = this.db.circles.map((c, idx) => `
-                        <tr class="border-b hover:bg-gray-50 font-bold text-sm">
-                            <td class="p-4 text-center">${idx + 1}</td>
-                            <td class="p-4">${c.name}</td>
-                            <td class="p-4 text-primary">${c.category}</td>
-                            <td class="p-4 text-gray-600">${c.teacher}</td>
-                            <td class="p-4 text-center text-secondary">${c.studentsCount} طلاب</td>
-                            <td class="p-4 text-center"><span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">${c.status}</span></td>
-                        </tr>
-                    `).join('');
-
-                    container.innerHTML = `
-                        <div class="bg-white p-6 rounded-3xl shadow-sm">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="font-black text-md text-gray-700">قائمة الحلقات الحالية</h3>
-                                <button onclick="App.openModal('modal-add-circle')" class="bg-primary text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-md flex items-center gap-2"><i class="fas fa-plus"></i> إضافة حلقة جديدة</button>
-                            </div>
-                            <table class="w-full text-right border-collapse">
-                                <thead><tr class="bg-gray-50 border-b text-xs font-black text-gray-400"><th class="p-4 text-center">#</th><th class="p-4">اسم الحلقة</th><th class="p-4">التصنيف</th><th class="p-4">المحفظ</th><th class="p-4 text-center">عدد الطلاب</th><th class="p-4 text-center">الحالة</th></tr></thead>
-                                <tbody>${rows || '<tr><td colspan="6" class="text-center py-10 text-gray-400">لا توجد حلقات مضافة بعد</td></tr>'}</tbody>
-                            </table>
-                        </div>
-                    `;
-                }
-                else if (page === 'students-mgmt') {
-                    let rows = this.db.students.map((s, idx) => {
-                        const circle = this.db.circles.find(c => c.id == s.circleId);
-                        return `
-                            <tr class="border-b hover:bg-gray-50 font-bold text-sm">
-                                <td class="p-4 text-center">${idx + 1}</td>
-                                <td class="p-4">${s.name}</td>
-                                <td class="p-4 text-gray-500">${circle ? circle.name : 'غير محدد'}</td>
-                                <td class="p-4 text-center text-accent">${s.juzCount} أجزاء</td>
-                                <td class="p-4 text-center text-secondary">${s.points || 0} ن</td>
-                                <td class="p-4 text-center">
-                                    <button onclick="App.printStudentCertificate(${s.id})" class="text-accent hover:text-yellow-600 ml-2 text-xs"><i class="fas fa-award"></i> شهادة</button>
-                                    <button onclick="App.deleteStudent(${s.id})" class="text-danger hover:text-red-700 text-xs"><i class="fas fa-trash"></i> حذف</button>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('');
-
-                    container.innerHTML = `
-                        <div class="bg-white p-6 rounded-3xl shadow-sm">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="font-black text-md text-gray-700">سجل الطلاب الإجمالي (${this.db.students.length} طالب)</h3>
-                                <button onclick="App.openModal('modal-add-student')" class="bg-primary text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-md flex items-center gap-2"><i class="fas fa-plus"></i> تسجيل طالب جديد</button>
-                            </div>
-                            <table class="w-full text-right border-collapse">
-                                <thead><tr class="bg-gray-50 border-b text-xs font-black text-gray-400"><th class="p-4 text-center">#</th><th class="p-4">اسم الطالب</th><th class="p-4">الحلقة</th><th class="p-4 text-center">الأجزاء المحفوظة</th><th class="p-4 text-center">النقاط</th><th class="p-4 text-center">إجراءات</th></tr></thead>
-                                <tbody>${rows || '<tr><td colspan="6" class="text-center py-10 text-gray-400">لا يوجد طلاب مسجلين حالياً</td></tr>'}</tbody>
-                            </table>
-                        </div>
-                    `;
-                }
-                else if (page === 'daily-report') {
-                    let circle = null;
-                    if (this.currentUser.role === 'admin') {
-                        circle = this.db.circles && this.db.circles[0];
-                    } else {
-                        circle = this.db.circles && this.db.circles.find(c => c.id == this.currentUser.circleId);
-                    }
-
-                    if (!circle) {
-                        container.innerHTML = `<div class="bg-yellow-50 text-accent p-6 rounded-2xl font-bold">الحساب الحالي غير مرتبط بحلقة قرآنية نشطة لرصد الدرجات.</div>`;
-                        return;
-                    }
-
-                    const students = this.db.students ? this.db.students.filter(s => s.circleId == circle.id && s.status === 'نشط') : [];
-                    
-                    let rows = students.map((s, idx) => `
-                        <tr class="border-b hover:bg-gray-50 font-bold text-sm">
-                            <td class="p-4 text-center">${idx + 1}</td>
-                            <td class="p-4">${s.name}</td>
-                            <td class="p-4">
-                                <select id="s-att-${s.id}" class="p-2 border rounded-xl text-xs bg-white font-bold outline-none">
-                                    <option value="حاضر">حاضر</option><option value="غائب">غائب</option><option value="مأذون">مأذون</option>
-                                </select>
-                            </td>
-                            <td class="p-4">
-                                <div class="flex items-center gap-1 justify-center">
-                                    <select id="s-surah-${s.id}" class="p-1 border rounded-lg text-xs bg-white font-bold outline-none">${QURAN_SURAHS.map(name=>`<option value="${name}">${name}</option>`).join('')}</select>
-                                    <input type="number" id="s-from-${s.id}" placeholder="من" class="w-12 p-1 text-center border rounded-lg text-xs">
-                                    <input type="number" id="s-to-${s.id}" placeholder="إلى" class="w-12 p-1 text-center border rounded-lg text-xs">
-                                </div>
-                            </td>
-                            <td class="p-4 text-center">
-                                <button onclick="App.saveStudentDaily(${s.id})" class="bg-primary text-white text-xs px-4 py-2 rounded-xl shadow-md hover:bg-blue-700 transition-all">حفظ الرصد</button>
-                            </td>
-                        </tr>
-                    `).join('');
-
-                    container.innerHTML = `
-                        <div class="bg-white p-6 rounded-3xl shadow-sm">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="font-black text-md text-primary">رصد حلقة: ${circle.name} | التاريخ: ${this.currentReportDate}</h3>
-                            </div>
-                            <table class="w-full text-right border-collapse">
-                                <thead><tr class="bg-gray-50 border-b text-xs font-black text-gray-400"><th class="p-4 text-center">#</th><th class="p-4">اسم الطالب</th><th class="p-4">الحالة</th><th class="p-4 text-center">رصد الحفظ الجديد</th><th class="p-4 text-center">إجراء</th></tr></thead>
-                                <tbody>${rows || '<tr><td colspan="5" class="text-center py-10 text-gray-400">لا يوجد طلاب نشطين في هذه الحلقة حالياً</td></tr>'}</tbody>
-                            </table>
-                        </div>
-                    `;
-                }
-                else {
-                    container.innerHTML = `<div class="bg-white p-12 rounded-3xl text-center text-gray-400 font-bold"><i class="fas fa-folder-open text-4xl mb-3 block text-gray-200"></i> جاري عرض وتحميل سجل بيانات الشاشة المحددة بالتفصيل...</div>`;
-                }
-            },
-
-            initDashboardChart() {
-                const ctx = document.getElementById('dashboardChart');
-                if (!ctx) return;
+            initChart() {
+                const canvas = document.getElementById('attendance-chart-mini');
+                if(!canvas) return;
+                const ctx = canvas.getContext('2d');
                 if (this.myChart) this.myChart.destroy();
                 
+                const counts = { advanced: 0, intermediate: 0, beginner: 0 };
+                this.db.students.forEach(s => {
+                    const j = s.juzCount || 0;
+                    if(j >= 20) counts.advanced++;
+                    else if(j >= 5) counts.intermediate++;
+                    else counts.beginner++;
+                });
+
                 this.myChart = new Chart(ctx, {
-                    type: 'line',
+                    type: 'doughnut',
                     data: {
-                        labels: ['أسبوع 1', 'أسبوع 2', 'أسبوع 3', 'أسبوع 4'],
-                        datasets: [{
-                            label: 'معدل الحفظ الجماعي للأجزاء',
-                            data: [12, 25, 48, 72],
-                            borderColor: '#1a5fb4',
-                            backgroundColor: 'rgba(26, 95, 180, 0.05)',
-                            tension: 0.4,
-                            fill: true
+                        labels: ['متقدمون (20+ جزء)', 'متوسطون (5+ جزء)', 'مبتدئون'],
+                        datasets: [{ 
+                            data: [counts.advanced, counts.intermediate, counts.beginner], 
+                            backgroundColor: ['#1a5fb4', '#2ec27e', '#e5a50a'], 
+                            borderWidth: 0 
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false }
+                    options: { 
+                        cutout: '70%',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { font: { family: 'Cairo', weight: 'bold', size: 10 } } } } 
+                    }
                 });
             },
 
-            saveStudentDaily(studentId) {
-                const status = document.getElementById(`s-att-${studentId}`).value;
-                const surah = document.getElementById(`s-surah-${studentId}`).value;
-                const fromVerse = parseInt(document.getElementById(`s-from-${studentId}`).value) || 1;
-                const toVerse = parseInt(document.getElementById(`s-to-${studentId}`).value) || 1;
-                
-                const logEntry = {
-                    id: Date.now(), studentId: studentId, date: this.currentReportDate,
-                    status: status, surah: surah, fromVerse: fromVerse, toVerse: toVerse,
-                    recordedBy: this.currentUser.name
+            setupStudentForm() {
+                const form = document.getElementById('form-add-student');
+                if(!form) return;
+                form.onsubmit = (e) => {
+                    e.preventDefault();
+                    if(this.currentUser.role === 'teacher') return;
+                    const id = document.getElementById('edit-student-id').value;
+                    const studentData = {
+                        name: document.getElementById('student-name').value.trim(),
+                        circleId: document.getElementById('modal-circle-select').value ? parseInt(document.getElementById('modal-circle-select').value) : null,
+                        phone: document.getElementById('student-phone').value.trim(),
+                        juzCount: Math.min(30, Math.max(0, parseInt(document.getElementById('student-juz').value) || 0)),
+                        status: document.getElementById('student-status').value,
+                        points: parseInt(document.getElementById('student-points').value) || 0
+                    };
+
+                    if (id) {
+                        const idx = this.db.students.findIndex(s => s.id === id);
+                        if(idx > -1) this.db.students[idx] = { ...this.db.students[idx], ...studentData };
+                        this.logActivity('تعديل طالب', studentData.name);
+                    } else {
+                        const newStudent = {
+                            id: Date.now(),
+                            ...studentData,
+                            joinDate: new Date().toISOString().split('T')[0],
+                        };
+                        this.db.students.push(newStudent);
+                        this.logActivity('إضافة طالب', newStudent.name);
+                    }
+
+                    this.syncCounts();
+                    this.saveDB();
+                    this.closeModal('modal-add-student');
+                    this.showToast("تم حفظ بيانات الطالب", "success");
+                    
+                    const activeNav = document.querySelector('.sidebar-link.active')?.id;
+                    if(activeNav === 'nav-btn-admin-students') this.renderAdminStudents();
+                    else if(activeNav === 'nav-btn-admin-dashboard') this.renderAdminDashboard();
+                    
+                    form.reset();
+                    document.getElementById('edit-student-id').value = '';
                 };
-
-                this.db.dailyLogs.push(logEntry);
-                
-                // منح الطالب نقاط فورية تشجيعية عند الحضور والحفظ
-                const student = this.db.students.find(s => s.id == studentId);
-                if (student && status === 'حاضر') {
-                    student.points = (parseInt(student.points) || 0) + (this.db.settings ? this.db.settings.pointReward : 5);
-                }
-
-                this.saveDB(); // الحفظ وبث المزامنة فوراً للسيرفر
-                this.showToast("تم حفظ ورصد التقرير ومشاركته بنجاح", "success");
             },
 
-            deleteStudent(studentId) {
-                if (confirm("هل أنت متأكد من حذف هذا الطالب نهائياً من قاعدة البيانات الموحدة؟")) {
-                    this.db.students = this.db.students.filter(s => s.id != studentId);
+            viewStudentHistory(studentId) {
+                const student = this.db.students.find(s => s.id === studentId);
+                const logs = this.db.dailyLogs.filter(l => l.studentId === studentId).sort((a, b) => new Date(b.date) - new Date(a.date));
+                const tests = (this.db.tests || []).filter(t => t.studentId === studentId).sort((a, b) => new Date(b.date) - new Date(a.date)); 
+                
+                const area = document.getElementById('content-area');
+                area.innerHTML = `
+                    <div class="mb-6 flex items-center justify-between no-print">
+                        <button onclick="App.navigate('${(this.currentUser.role === 'admin' || this.currentUser.role === 'supervisor') ? 'admin-students' : 'teacher-students'}')" class="bg-white border px-4 py-2 rounded-xl text-xs font-black text-gray-500 hover:text-primary transition-all">
+                            <i class="fas fa-arrow-right ml-2"></i> العودة
+                        </button>
+                        <h3 class="font-black text-xl">سجل متابعة الطالب: ${student.name}</h3>
+                        <button onclick="window.print()" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black"><i class="fas fa-print ml-2"></i> طباعة السجل</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white p-5 rounded-3xl border shadow-sm text-center">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">إجمالي الحفظ</p>
+                            <p class="text-xl font-black text-primary">${student.juzCount} جزء</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-3xl border shadow-sm text-center">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">نسبة الحضور</p>
+                            <p class="text-xl font-black text-green-600">${this.calculateAttendanceRate(studentId)}%</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-3xl border shadow-sm text-center">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">النقاط الحالية</p>
+                            <p class="text-xl font-black text-orange-500"><i class="fas fa-star ml-1"></i>${student.points || 0}</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-3xl border shadow-sm text-center">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">الحالة</p>
+                            <p class="text-sm font-black ${student.status === 'نشط' ? 'text-green-500' : 'text-red-500'}">${student.status}</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-8 bg-white rounded-3xl border border-orange-100 overflow-hidden shadow-sm">
+                        <div class="p-4 bg-orange-50 font-black text-orange-800 text-sm">سجل اختبارات الأجزاء</div>
+                        <table class="w-full text-right text-xs">
+                             <thead class="bg-orange-50/50 text-gray-400 uppercase font-black">
+                                <tr><th class="p-3">التاريخ</th><th>الجزء</th><th>الدرجة</th><th>التقدير</th></tr>
+                             </thead>
+                             <tbody>
+                                ${tests.length > 0 ? tests.map(t => `
+                                    <tr class="border-t border-orange-50">
+                                        <td class="p-3">${t.date}</td>
+                                        <td class="font-bold text-orange-700">${t.part}</td>
+                                        <td class="font-black">${t.score}/100</td>
+                                        <td><span class="bg-orange-100 px-2 py-0.5 rounded text-orange-600">${t.grade}</span></td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="4" class="text-center py-4 text-gray-400">لا يوجد اختبارات مسجلة</td></tr>'}
+                             </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+                        <div class="p-4 bg-gray-50 font-black text-gray-800 text-sm">المتابعة اليومية التفصيلية</div>
+                        <table class="w-full text-right">
+                            <thead class="bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                                <tr>
+                                    <th class="p-4">التاريخ</th>
+                                    <th class="p-4">الحالة</th>
+                                    <th class="p-4">ما تم حفظه (صفحات)</th>
+                                    <th class="p-4">المراجعة (صفحات)</th>
+                                    <th class="p-4 text-center">التقييم</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50 text-sm">
+                                ${logs.length > 0 ? logs.map(l => `
+                                    <tr class="hover:bg-gray-50 transition-all">
+                                        <td class="p-4 font-bold text-gray-600">${l.date}</td>
+                                        <td class="p-4"><span class="px-2 py-1 rounded-lg text-[10px] font-black ${l.attendance === 'حاضر' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}">${l.attendance}</span></td>
+                                        <td class="p-4 text-gray-600 font-medium">
+                                            ${l.hifz || '---'}
+                                        </td>
+                                        <td class="p-4 text-gray-600 font-medium">
+                                            ${l.murajaa || '---'}
+                                        </td>
+                                        <td class="p-4 text-center"><span class="bg-blue-50 text-primary px-2 py-1 rounded-lg font-black text-[10px]">${l.exam || '---'}</span></td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="5" class="text-center py-20 text-gray-400 font-bold">لا يوجد سجلات متابعة مسجلة لهذا الطالب حتى الآن</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            },
+
+            calculateAttendanceRate(studentId) {
+                const logs = this.db.dailyLogs.filter(l => l.studentId == studentId);
+                if(logs.length === 0) return 0;
+                const present = logs.filter(l => l.attendance === 'حاضر').length;
+                return Math.round((present / logs.length) * 100);
+            },
+
+            renderHonorRoll() {
+                const topStudents = [...this.db.students]
+                    .filter(s => s.status === 'نشط')
+                    .sort((a, b) => (b.points || 0) - (a.points || 0)) 
+                    .slice(0, 3);
+                
+                if (topStudents.length === 0) return '';
+
+                return `
+                    <div class="bg-gradient-to-br from-yellow-50 via-white to-orange-50 p-6 rounded-3xl border border-yellow-200 mb-8 relative overflow-hidden">
+                        <div class="absolute -top-10 -left-10 w-32 h-32 bg-yellow-200 rounded-full blur-3xl opacity-30"></div>
+                        <h3 class="font-black text-orange-800 mb-4 flex items-center relative z-10 text-lg">
+                            <i class="fas fa-crown ml-3 text-yellow-500 text-2xl"></i> لوحة شرف نجوم الوحدة
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
+                            ${topStudents.map((s, idx) => `
+                                <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl flex items-center space-x-4 space-x-reverse border border-white shadow-sm">
+                                    <div class="text-3xl">${idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</div>
+                                    <div>
+                                        <p class="font-black text-sm text-gray-800">${s.name}</p>
+                                        <p class="text-[10px] font-bold text-orange-600">${s.points || 0} نقطة تميز</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            },
+
+            checkAbsenteeism(studentId) {
+                const logs = this.db.dailyLogs.filter(l => l.studentId == studentId).sort((a, b) => new Date(b.date) - new Date(a.date));
+                if (logs.length < 3) return false;
+                const lastThree = logs.slice(0, 3);
+                return lastThree.every(l => l.attendance === 'غائب');
+            },
+
+            openChangePasswordModal() {
+                const newPass = prompt("أدخل كلمة المرور الجديدة:");
+                if (newPass && newPass.length >= 3) {
+                    const idx = this.db.users.findIndex(u => u.id === this.currentUser.id);
+                    this.db.users[idx].password = btoa(newPass);
                     this.saveDB();
-                    this.showToast("تم حذف الطالب وتحديث البيانات");
+                    this.showToast("تم تغيير كلمة المرور بنجاح", "success");
+                    this.logActivity('تغيير كلمة مرور', this.currentUser.name);
+                } else if (newPass) {
+                    this.showToast("كلمة المرور قصيرة جداً", "error");
                 }
+            },
+
+            printFinanceReport() {
+                if(this.currentUser.role === 'teacher') return;
+                const f = this.db.finance;
+                const totalIncome = f.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                const totalExpense = f.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                
+                let printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <dir dir="rtl" style="font-family: 'Cairo', sans-serif; padding: 40px;">
+                        <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px;">
+                            <h1 style="color: #1a5fb4; margin: 0;">مركز الوحدة لتعليم القرآن</h1>
+                            <p style="margin: 5px 0;">كشف مالي تفصيلي للمركز</p>
+                            <p style="font-size: 12px; color: #666;">تاريخ التقرير: ${new Date().toLocaleString('ar-SA')}</p>
+                        </div>
+                        <div style="display: flex; justify-content: space-around; margin: 30px 0; background: #f9f9f9; padding: 20px; border-radius: 15px;">
+                            <div style="text-align: center;"><h4>إجمالي الإيرادات</h4><h2 style="color: green;">${totalIncome} ر.س</h2></div>
+                            <div style="text-align: center;"><h4>إجمالي المصروفات</h4><h2 style="color: red;">${totalExpense} ر.س</h2></div>
+                            <div style="text-align: center;"><h4>الرصيد الصافي</h4><h2 style="color: #1a5fb4;">${this.calculateBalance()} ر.س</h2></div>
+                        </div>
+                    </dir>
+                `);
+                printWindow.document.close();
+                printWindow.focus();
+                setTimeout(() => { printWindow.print(); }, 500);
+            },
+
+            handleGlobalSearch(query) {
+                const resDiv = document.getElementById('search-results');
+                if (!query || query.length < 2) { resDiv.classList.add('hidden'); return; }
+                
+                const q = query.toLowerCase();
+                const studentMatches = this.db.students.filter(s => s.name.toLowerCase().includes(q)).slice(0, 3);
+                const teacherMatches = this.db.users.filter(u => u.name.toLowerCase().includes(q) && u.role !== 'admin').slice(0, 2);
+                const circleMatches = this.db.circles.filter(c => c.name.toLowerCase().includes(q)).slice(0, 2);
+                
+                if (studentMatches.length > 0 || teacherMatches.length > 0 || circleMatches.length > 0) {
+                    let html = '';
+                    studentMatches.forEach(s => {
+                        html += `<div onclick="App.viewStudentHistory(${s.id}); document.getElementById('search-results').classList.add('hidden');" class="p-3 hover:bg-gray-50 cursor-pointer flex justify-between items-center border-b border-gray-50"><div><p class="text-xs font-black text-gray-800">${s.name}</p></div></div>`;
+                    });
+                    resDiv.innerHTML = html;
+                    resDiv.classList.remove('hidden');
+                } else {
+                    resDiv.innerHTML = '<p class="p-4 text-[10px] text-gray-400 text-center">لا توجد نتائج مطابقة</p>';
+                    resDiv.classList.remove('hidden');
+                }
+            },
+
+            sendWhatsApp(studentId) {
+                const student = this.db.students.find(s => s.id == studentId);
+                const log = this.db.dailyLogs.filter(l => l.studentId == studentId).sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+                
+                if(!log) {
+                    this.showToast("لا يوجد سجل يومي لإرساله اليوم", "error");
+                    return;
+                }
+
+                const message = `*تقرير الطالب: ${student.name}*%0A` +
+                                `*التاريخ:* ${log.date}%0A` +
+                                `*الحفظ:* ${log.hifz || '---'}%0A` +
+                                `*المراجعة:* ${log.murajaa || '---'}%0A` +
+                                `%0A_صادر عن نظام مركز الوحدة`;
+
+                let phone = student.phone;
+                if(!phone.startsWith('972')) phone = '972' + phone.replace(/^0+/, '');
+                window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+            },
+
+            openAddTestModal(studentId) {
+                if(this.currentUser.role === 'teacher') return;
+                document.getElementById('test-student-id').value = studentId;
+                this.openModal('modal-add-test');
+            },
+
+            setupTestForm() {
+                const form = document.getElementById('form-add-test');
+                if(!form) return;
+                form.onsubmit = (e) => {
+                    e.preventDefault();
+                    if(this.currentUser.role === 'teacher') return;
+                    const studentId = document.getElementById('test-student-id').value;
+                    const newTest = {
+                        id: Date.now(),
+                        studentId: studentId,
+                        part: document.getElementById('test-part').value,
+                        score: document.getElementById('test-score').value,
+                        grade: document.getElementById('test-grade').value,
+                        date: new Date().toISOString().split('T')[0]
+                    };
+                    
+                    if(!this.db.tests) this.db.tests = [];
+                    this.db.tests.push(newTest);
+                    
+                    const sIdx = this.db.students.findIndex(s => s.id == studentId);
+                    if(sIdx > -1) {
+                        this.db.students[sIdx].points = (this.db.students[sIdx].points || 0) + 50; 
+                    }
+
+                    if (this.currentPendingRequestId) {
+                        const reqIdx = this.db.testRequests.findIndex(r => r.id == this.currentPendingRequestId);
+                        if(reqIdx > -1) {
+                            this.db.testRequests[reqIdx].status = 'approved';
+                        }
+                        this.currentPendingRequestId = null;
+                    }
+
+                    this.saveDB();
+                    this.closeModal('modal-add-test');
+                    this.showToast("تم تسجيل نتيجة الاختبار ومنح 50 نقطة تميز", "success");
+                    form.reset();
+                };
+            },
+
+            openRequestTestModal(studentId) {
+                const student = this.db.students.find(s => s.id == studentId);
+                if (!student) return;
+                document.getElementById('req-test-student-id').value = studentId;
+                document.getElementById('req-test-part').value = '';
+                document.getElementById('req-test-notes').value = '';
+                this.openModal('modal-request-test');
+            },
+
+            setupRequestTestForm() {
+                const form = document.getElementById('form-request-test');
+                if(!form) return;
+                form.onsubmit = (e) => {
+                    e.preventDefault();
+                    const studentId = document.getElementById('req-test-student-id').value;
+                    const student = this.db.students.find(s => s.id == studentId);
+                    const circle = this.db.circles.find(c => c.id == student.circleId);
+                    
+                    const newRequest = {
+                        id: Date.now(),
+                        studentId: studentId,
+                        studentName: student.name,
+                        circleName: circle ? circle.name : 'بدون حلقة',
+                        part: document.getElementById('req-test-part').value,
+                        notes: document.getElementById('req-test-notes').value,
+                        requestedBy: this.currentUser.name,
+                        status: 'pending',
+                        date: new Date().toISOString().split('T')[0]
+                    };
+
+                    if(!this.db.testRequests) this.db.testRequests = [];
+                    this.db.testRequests.push(newRequest);
+                    
+                    this.saveDB();
+                    this.closeModal('modal-request-test');
+                    this.showToast("تم إرسال طلب الاختبار للإدارة بنجاح", "success");
+                    form.reset();
+                };
+            },
+
+            approveTestRequest(requestId, studentId, part) {
+                if(this.currentUser.role === 'teacher') return;
+                this.currentPendingRequestId = requestId;
+                document.getElementById('test-student-id').value = studentId;
+                document.getElementById('test-part').value = part;
+                document.getElementById('test-score').value = '';
+                document.getElementById('test-grade').value = 'ممتاز';
+                this.openModal('modal-add-test');
+            },
+
+            rejectTestRequest(requestId) {
+                if(this.currentUser.role === 'teacher') return;
+                if(confirm('هل أنت متأكد من رفض هذا الطلب؟')) {
+                    const idx = this.db.testRequests.findIndex(r => r.id == requestId);
+                    if(idx > -1) {
+                        this.db.testRequests[idx].status = 'rejected';
+                        this.saveDB();
+                        this.renderAdminDashboard();
+                        this.showToast('تم رفض طلب الاختبار');
+                    }
+                }
+            },
+
+            renderMonthlyReports(viewType) {
+                if(this.currentUser.role === 'teacher') {
+                    document.getElementById('content-area').innerHTML = `<div class="p-20 text-center font-black text-red-500">غير مصرح لك بدخول مركز التقارير</div>`;
+                    return;
+                }
+                const area = document.getElementById('content-area');
+                const months = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+                const currentMonth = new Date().getMonth() + 1;
+                const currentYear = new Date().getFullYear();
+                const categories = [...new Set(this.db.circles.map(c => c.category || 'عام'))];
+
+                area.innerHTML = `
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-8 no-print page-animate">
+                        <h3 class="font-black text-gray-800 mb-6 flex items-center">
+                            <i class="fas fa-file-invoice ml-3 text-primary"></i> مركز استخراج التقارير الذكي
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 mb-1 uppercase">نوع التقرير</label>
+                                <select id="rpt-type" class="w-full p-3 rounded-xl bg-gray-50 border-none font-bold text-xs outline-none focus:ring-2 focus:ring-primary">
+                                    <option value="monthly-achievement">إنجاز الحلقات الشهري</option>
+                                    <option value="tests-report">سجل الاختبارات</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 mb-1 uppercase">الشهر / السنة</label>
+                                <div class="flex gap-1">
+                                    <select id="rpt-month" class="w-full p-3 rounded-xl bg-gray-50 border-none font-bold text-xs outline-none">
+                                        ${months.map((m, i) => `<option value="${i+1}" ${currentMonth == i+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                    </select>
+                                    <input type="number" id="rpt-year" value="${currentYear}" class="w-24 p-3 rounded-xl bg-gray-50 border-none font-bold text-xs outline-none">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 mb-1 uppercase">حلقة معينة (اختياري)</label>
+                                <select id="rpt-circle" class="w-full p-3 rounded-xl bg-gray-50 border-none font-bold text-xs outline-none">
+                                    <option value="all">كل الحلقات</option>
+                                    ${this.db.circles.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 mb-1 uppercase">تصنيف الحلقات</label>
+                                <select id="rpt-category" class="w-full p-3 rounded-xl bg-gray-50 border-none font-bold text-xs outline-none">
+                                    <option value="all">كل التصنيفات</option>
+                                    ${categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                                </select>
+                            </div>
+
+                            <div class="flex items-end">
+                                <button onclick="App.generateAdvancedReport()" class="w-full bg-primary text-white p-3 rounded-xl font-black text-xs shadow-lg hover:scale-105 transition-all">
+                                    توليد التقرير <i class="fas fa-cog mr-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="report-results-area" class="page-animate">
+                        <div class="text-center py-20 text-gray-300">
+                            <i class="fas fa-chart-bar text-6xl mb-4 opacity-20"></i>
+                            <p class="font-bold text-sm">حدد المعايير أعلاه واضغط على توليد التقرير</p>
+                        </div>
+                    </div>
+                `;
+            },
+
+            generateAdvancedReport() {
+                if(this.currentUser.role === 'teacher') return;
+                const type = document.getElementById('rpt-type').value;
+                const month = parseInt(document.getElementById('rpt-month').value);
+                const year = parseInt(document.getElementById('rpt-year').value);
+                const circleId = document.getElementById('rpt-circle').value;
+                const category = document.getElementById('rpt-category').value;
+                const resultsArea = document.getElementById('report-results-area');
+
+                let targetCircles = [...this.db.circles];
+                if (circleId !== 'all') targetCircles = targetCircles.filter(c => c.id == circleId);
+                if (category !== 'all') targetCircles = targetCircles.filter(c => c.category === category);
+                const targetCircleIds = targetCircles.map(c => c.id);
+                const targetStudents = this.db.students.filter(s => targetCircleIds.includes(s.circleId));
+
+                let html = `
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden print:border-none print:shadow-none">
+                        <div class="p-6 border-b bg-gray-50 flex justify-between items-center">
+                            <div>
+                                <h3 class="font-black text-lg text-primary">تقرير: ${document.getElementById('rpt-type').options[document.getElementById('rpt-type').selectedIndex].text}</h3>
+                                <p class="text-xs text-gray-400 font-bold">لفترة: ${month}/${year} | التصنيف: ${category === 'all' ? 'الكل' : category}</p>
+                            </div>
+                            <button onclick="window.print()" class="no-print bg-dark text-white px-4 py-2 rounded-xl text-xs font-black shadow-md"><i class="fas fa-print ml-2"></i> طباعة</button>
+                        </div>
+                        <div class="p-4 overflow-x-auto">
+                `;
+
+                if (type === 'monthly-achievement') {
+                    html += this.buildMonthlyAchievementTable(targetStudents, month, year);
+                } else if (type === 'tests-report') {
+                    html += this.buildTestsReportTable(targetStudents, month, year);
+                }
+
+                html += `</div></div>`;
+                resultsArea.innerHTML = html;
+            },
+
+            buildMonthlyAchievementTable(students, month, year) {
+                let rows = "";
+                students.forEach(s => {
+                    const logs = this.db.dailyLogs.filter(l => l.studentId == s.id && l.month == month && l.year == year);
+                    if (logs.length > 0) {
+                        const attendanceCount = logs.filter(l => l.attendance === 'حاضر').length;
+                        const circleName = this.db.circles.find(c => c.id == s.circleId)?.name || '---';
+                        const hifzSummary = [...new Set(logs.filter(l => l.hifzSurah).map(l => l.hifzSurah))].join('، ') || '---';
+                        const totalPagesMonth = logs.reduce((acc, l) => acc + (l.hifzPages || 0), 0).toFixed(1);
+                        rows += `
+                            <tr class="text-xs border-b border-gray-50 hover:bg-gray-50">
+                                <td class="p-3 font-bold">${s.name}</td>
+                                <td class="p-3 text-gray-500">${circleName}</td>
+                                <td class="p-3 text-center font-black text-primary">${attendanceCount}</td>
+                                <td class="p-3 text-center font-black text-secondary">${totalPagesMonth} ص</td>
+                                <td class="p-3 text-right text-[10px] leading-relaxed">${hifzSummary}</td>
+                            </tr>
+                        `;
+                    }
+                });
+                return `<table class="w-full text-right"><thead class="bg-gray-100 text-[10px] font-black text-gray-400 uppercase"><tr><th class="p-3">الطالب</th><th class="p-3">الحلقة</th><th class="p-3 text-center">أيام الحضور</th><th class="p-3 text-center">إجمالي الصفحات</th><th class="p-3 text-right">أهم المحفوظات</th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="text-center py-10">لا توجد بيانات</td></tr>'}</tbody></table>`;
+            },
+
+            buildTestsReportTable(students, month, year) {
+                const studentIds = students.map(s => s.id);
+                const tests = (this.db.tests || []).filter(t => {
+                    const testDate = new Date(t.date);
+                    return studentIds.includes(parseInt(t.studentId)) && (testDate.getMonth() + 1) == month && testDate.getFullYear() == year;
+                });
+                let rows = tests.map(t => {
+                    const s = students.find(st => st.id == t.studentId);
+                    return `<tr class="text-xs border-b border-gray-50"><td class="p-3 font-bold">${s ? s.name : '---'}</td><td class="p-3 text-primary font-black">${t.part}</td><td class="p-3 text-center">${t.score}%</td><td class="p-3 text-center"><span class="bg-blue-50 text-blue-600 px-2 py-1 rounded font-black">${t.grade}</span></td><td class="p-3 text-center text-gray-400">${t.date}</td></tr>`;
+                }).join('');
+                return `<table class="w-full text-right"><thead class="bg-gray-100 text-[10px] font-black text-gray-400 uppercase"><tr><th class="p-3">الطالب</th><th class="p-3">الجزء</th><th class="p-3 text-center">الدرجة</th><th class="p-3 text-center">التقدير</th><th class="p-3 text-center">التاريخ</th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="text-center py-10">لا توجد اختبارات</td></tr>'}</tbody></table>`;
             },
 
             printStudentCertificate(studentId) {
@@ -878,28 +2283,26 @@
                 printWindow.document.write(`
                     <dir dir="rtl" style="font-family: 'Cairo', sans-serif; text-align: center; border: 15px double #1a5fb4; padding: 50px; margin: 20px;">
                         <h1 style="color: #1a5fb4; font-size: 40px;">شهادة تقدير وتميز</h1>
-                        <p style="font-size: 20px;">يسر إدارة مركز تحفيظ القرآن الكريم أن يمنح هذه الشهادة للطالب المتميز:</p>
+                        <p style="font-size: 20px;">يسر مركز الوحدة لتعليم القرآن الكريم أن يمنح هذه الشهادة للطالب:</p>
                         <h2 style="font-size: 35px; border-bottom: 2px solid #eee; display: inline-block; padding: 0 30px;">${student.name}</h2>
-                        <p style="font-size: 20px;">وذلك تقديراً لجهوده المباركة في حفظ كتاب الله تعالى، حيث أتم بنجاح حفظ وطاقة:</p>
+                        <p style="font-size: 20px;">وذلك تقديراً لجهوده المتميزة في حفظ القرآن الكريم، حيث أتم حفظ:</p>
                         <h3 style="font-size: 28px; color: #e5a50a;">${student.juzCount} أجزاء</h3>
-                        <p style="margin-top: 50px; font-weight: bold;">إدارة المركز العام</p>
+                        <p style="margin-top: 50px; font-weight: bold;">إدارة المركز</p>
                     </dir>
                 `);
                 printWindow.document.close();
                 printWindow.print();
-            },
-
-            setupEditUserForm() {}, setupCircleForm() {}, setupTestForm() {}, setupRequestTestForm() {},
-            exportBackup() {}, importBackup() {}
+            }
         };
 
-        // ربط الكائن بنافذة المتصفح ليتوافق مع جميع أزرار الـ HTML العلوية والسيرفر
-        window.App = App;
-
+        // في السطر الأخير من الكود للتأكد من ربط الأزرار بشكل صحيح بكائن App
+        window.app = App; 
+        
         // تشغيل النظام فور تحميل الصفحة
         document.addEventListener('DOMContentLoaded', () => {
             App.init();
         });
+
     </script>
 </body>
 </html>
