@@ -511,12 +511,13 @@
 
             // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
           // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
+       // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
         setupLogin() {
             const form = document.getElementById('login-form');
             if (!form) return;
             
             form.onsubmit = async (e) => {
-                // ⚠️ منع المتصفح تماماً من إعادة تحميل الصفحة نهائياً عند الضغط على الزر
+                // منع المتصفح نهائياً وبشكل صارم من إعادة تحميل الصفحة 
                 e.preventDefault(); 
                 
                 const uName = document.getElementById('username').value.trim();
