@@ -2317,6 +2317,14 @@
         };
 
         window.onload = () => App.init();
+        // في السطر الأخير من الكود للتأكد من ربط الأزرار بشكل صحيح بكائن app
+    window.App = app; 
+    
+    // تشغيل النظام فور تحميل الصفحة
+    document.addEventListener('DOMContentLoaded', () => {
+        app.init();
+    });
+
     </script>
 </body>
 </html>
