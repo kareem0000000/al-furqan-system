@@ -498,34 +498,35 @@ const DB_KEY = 'al_furqan_ultimate_db';
             },
 
             // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
-            setupLogin() {
-                const form = document.getElementById('login-form');
-                if (!form) return;
+           setupLogin() {
+            const form = document.getElementById('login-form');
+            if (!form) return;
+            
+            form.onsubmit = async (e) => {
+                // ⚠️ هذا السطر هو الأهم: يمنع المتصفح من إعادة تحميل الصفحة نهائياً عند الضغط على الزر
+                e.preventDefault(); 
                 
-                form.onsubmit = async (e) => {
-                    e.preventDefault();
-                    const uName = document.getElementById('username').value.trim();
-                    const uPass = document.getElementById('password').value;
+                const uName = document.getElementById('username').value.trim();
+                const uPass = document.getElementById('password').value;
 
-                    if (!this.db || !this.db.users) {
-                        alert("خطأ في تحميل البيانات، يرجى تحديث الصفحة.");
-                        return;
-                    }
+                if (!this.db || !this.db.users) {
+                    alert("خطأ في تحميل البيانات من السيرفر، يرجى تحديث الصفحة.");
+                    return;
+                }
 
-                    // البحث ومقارنة كلمة المرور بنظام التشفير btoa الافتراضي المتوافق مع حساباتك
-                    const user = this.db.users.find(u => u.username === uName && u.password === btoa(uPass));
+                // التحقق من الحساب بتشغير الباسورد لمطابقة السيرفر
+                const user = this.db.users.find(u => u.username === uName && u.password === btoa(uPass));
 
-                    if (user) {
-                        this.currentUser = user;
-                        sessionStorage.setItem('logged_user_id', user.id);
-                        this.showToast(`أهلاً بك يا ${user.name}، تم تسجيل الدخول بنجاح`, 'success');
-                        this.startApp();
-                    } else {
-                        alert('اسم المستخدم أو كلمة المرور غير صحيحة! يرجى المحاولة مرة أخرى.');
-                        this.showToast('فشل تسجيل الدخول، بيانات غير صحيحة', 'error');
-                    }
-                };
-            },
+                if (user) {
+                    this.currentUser = user;
+                    sessionStorage.setItem('logged_user_id', user.id);
+                    this.showToast(`أهلاً بك يا ${user.name}، تم تسجيل الدخول بنجاح`, 'success');
+                    this.startApp();
+                } else {
+                    alert('اسم المستخدم أو كلمة المرور غير صحيحة! يرجى المحاولة مرة أخرى.');
+                }
+            };
+        },
 
             logActivity(action, details) {
                 if(!this.db.activityLogs) this.db.activityLogs = [];
