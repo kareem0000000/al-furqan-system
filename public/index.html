@@ -330,7 +330,7 @@
     </div>
 
     <script>
-        // ==========================================
+       // ==========================================
         // 1. إعدادات الدوال السحابية والاتصال بالسيرفر
         // ==========================================
         const API_URL = "https://al-wehda-system.onrender.com";
@@ -344,6 +344,18 @@
                 console.error("خطأ في جلب البيانات من السيرفر السحابي", e);
             }
             return null;
+        }
+
+        async function saveDataToServer(data) {
+            try {
+                await fetch(`${API_URL}/api/save-data`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } catch (e) { 
+                console.error("خطأ في حفظ البيانات على السيرفر السحابي", e);
+            }
         }
 
         async function saveDataToServer(data) {
@@ -498,36 +510,36 @@
             },
 
             // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
-          setupLogin() {
+          // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
+        setupLogin() {
             const form = document.getElementById('login-form');
             if (!form) return;
             
             form.onsubmit = async (e) => {
-                // ⚠️ منع المتصفح تماماً من إعادة تحميل الصفحة أو قراءة علامات الاستفهام في الرابط
+                // ⚠️ منع المتصفح تماماً من إعادة تحميل الصفحة نهائياً عند الضغط على الزر
                 e.preventDefault(); 
                 
                 const uName = document.getElementById('username').value.trim();
                 const uPass = document.getElementById('password').value;
 
                 if (!this.db || !this.db.users) {
-                    alert("يتم الآن الاتصال بالسيرفر وجلب البيانات السحابية.. يرجى الانتظار ثوانٍ ثم الضغط مجدداً.");
+                    alert("يتم الآن جلب البيانات السحابية.. يرجى الانتظار ثوانٍ ثم المحاولة مجدداً.");
                     return;
                 }
 
-                // التحقق من الحساب بمطابقة تشفير الباسورد الافتراضي في النظام
+                // التحقق من الحساب بتشفير الباسورد لمطابقة السيرفر
                 const user = this.db.users.find(u => u.username === uName && u.password === btoa(uPass));
 
                 if (user) {
                     this.currentUser = user;
                     sessionStorage.setItem('logged_user_id', user.id);
                     
-                    // إخفاء شاشة تسجيل الدخول وإظهار التطبيق الرئيسي
+                    // إخفاء شاشة تسجيل الدخول وإظهار التطبيق الرئيسي فوراً بدون تحديث
                     document.getElementById('login-screen').classList.add('hidden');
                     document.getElementById('main-App').classList.remove('hidden');
                     
                     this.startApp();
                     
-                    // تذكير بالنجاح
                     if (typeof this.showToast === 'function') {
                         this.showToast(`أهلاً بك يا ${user.name}، تم تسجيل الدخول بنجاح`, 'success');
                     }
@@ -536,7 +548,6 @@
                 }
             };
         },
-
             logActivity(action, details) {
                 if(!this.db.activityLogs) this.db.activityLogs = [];
                 this.db.activityLogs.push({
