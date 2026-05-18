@@ -330,7 +330,8 @@
     </div>
 
     <script>
-       // ==========================================
+      <script>
+        // ==========================================
         // 1. إعدادات الدوال السحابية والاتصال بالسيرفر
         // ==========================================
         const API_URL = "https://al-wehda-system.onrender.com";
@@ -358,21 +359,11 @@
             }
         }
 
-        async function saveDataToServer(data) {
-            try {
-                await fetch(`${API_URL}/api/save-data`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-            } catch (e) { 
-                console.error("خطأ في حفظ البيانات على السيرفر السحابي", e);
-            }
-        }
-        const DB_KEY = 'al_furqan_ultimate_db';
-
         // مصفوفة أسماء السور المسبقة مع عدد آياتها وعدد صفحاتها للعمليات الحسابية
         const QURAN_METADATA = {
+
+        // مصفوفة أسماء السور المسبقة مع عدد آياتها وعدد صفحاتها للعمليات الحسابية
+     
             "الفاتحة": { verses: 7, pages: 1 }, "البقرة": { verses: 286, pages: 48 }, "آل عمران": { verses: 200, pages: 27 },
             "النساء": { verses: 176, pages: 29 }, "المائدة": { verses: 120, pages: 22 }, "الأنعام": { verses: 165, pages: 23 },
             "الأعراف": { verses: 206, pages: 26 }, "الأنفال": { verses: 75, pages: 10 }, "التوبة": { verses: 129, pages: 21 },
@@ -512,12 +503,12 @@
             // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
           // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
        // 3. دالة التحقق من تسجيل الدخول عند الضغط على الزر
-        setupLogin() {
+       setupLogin() {
             const form = document.getElementById('login-form');
             if (!form) return;
             
             form.onsubmit = async (e) => {
-                // منع المتصفح نهائياً وبشكل صارم من إعادة تحميل الصفحة 
+                // ⚠️ منع المتصفح تماماً من إعادة تحميل الصفحة نهائياً عند الضغط على الزر
                 e.preventDefault(); 
                 
                 const uName = document.getElementById('username').value.trim();
