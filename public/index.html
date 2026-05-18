@@ -333,7 +333,11 @@
         // ==========================================
         // 1. إعدادات الدوال السحابية والاتصال بالسيرفر
         // ==========================================
-        const API_URL = window.location.origin;
+       // تم حذف علامة الاستفهام لكي يتم الربط بالسيرفر السحابي و MongoDB مباشرة
+
+const API_URL = "https://al-wehda-system.onrender.com"; 
+
+const DB_KEY = 'al_furqan_ultimate_db';
 
         async function loadDataFromServer() {
             try {
